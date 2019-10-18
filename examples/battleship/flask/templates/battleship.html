@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+.grid-container {
+  display: grid;
+  grid-template-columns: 60px 60px 60px 60px 60px 60px 60px 60px 60px 60px ;
+  grid-template-rows: 60px 60px 60px 60px 60px 60px 60px 60px 60px 60px ;
+  grid-gap: 3px;
+  //background-color: #5596F3;
+  padding: 1px;
+}
+
+.grid-container > div {
+  //background-color: rgba(25, 25, 255, 1);
+  border: 1px solid rgb(32, 128, 255);
+  text-align: center;
+  padding: 1px 0;
+  font-size: 40px;
+}
+
+</style>
+</head>
+<body>
+
+<title>Battleship Game</title>
+
+<form method="POST">
+    Start a new game: <input type="hidden" name="new game">
+    <input type="submit" value="New Game">
+</form>
+
+<form method="POST">
+    Authentication Token: <input name="refresh token" value='{{ text }}'>
+    <input type="submit" value="Refresh Player">
+</form>
+
+<form method="POST">
+    Ship Deployment: <input name="ship deployment" size="80" value='{{ playerships }}'>
+    <input type="submit" value="Join Game">
+    <div>You can deploy 5 ships of length 2,3,3,4 and 5, respectively, on a 10x10 grid.
+        Each ship is described with a length, x, y, orientation (0=horizontal, 1=vertical) quadruple.
+        The deployment is described by the concatenation of 5 such quadruples.<br>
+        Example deployment: 2, 0, 0, 0, 3, 1, 1, 0, 3, 2, 2, 0, 4, 3, 3, 0, 5, 4, 4, 0
+    </div>
+</form>
+
+
+<form method="POST">
+    Token: <input name="shoot token" value={{ text }}>
+    X: <input name="shoot x" value="0">
+    Y: <input name="shoot y" value="0">
+    <input type="submit" value="Shoot">
+</form>
+
+Raw Response: {{ battleshipresponse }}
+
+<div id="battleship-response" value="{{ battleshipresponse  }}"></div>
+
+<div style="display: inline-block; width: 49%;">
+    Guess Table
+    <div class="grid-container" id="battleship-guess-table"></div>
+</div>
+<div style="display: inline-block; width: 49%;">
+    Own Table
+    <div class="grid-container" id="battleship-own-table"></div>
+</div>
+
+<div id="player-type"></div>
+<div id="operation-outcome"></div>
+<div id="game-status"></div>
+
+
+<script>
+    token = '{{ text }}' ;
+    //grid colors are in array where: 0=can shoot; 1:hit; 2=missed; 3=ship1;4=ship2; 5=ship3; 6=ship4; 7=ship5
+    battleship_grid_colors = ["lightblue", "black", "white", "green", "magenta", "red", "yellow", "blue"];
+    battleshipresponse = {{ battleshipresponse|tojson }};
+    var response = JSON.parse(battleshipresponse);
+    bgt = document.getElementById("battleship-guess-table");
+    bot = document.getElementById("battleship-own-table");
+    var guess_item_array = new Array;
+    for(i=0; i < response['guess_table'].length; i++) {
+        var celldiv = document.createElement("div");
+        celldiv.className = "grid-item";
+        celldiv.style.backgroundColor = battleship_grid_colors[response['guess_table'][i]];
+        //celldiv.innerHTML = response['guess_table'][i];
+        x = Math.floor(i/10);
+        y = i-(x*10);
+        celldiv.setAttribute("x", x);
+        celldiv.setAttribute("y", y);
+        celldiv.onclick = function() {
+            let lx = x;
+            let ly = y;
+            celldiv = this;
+            window.location = "battleship?operation=shoot&token=" + token + "&shootx=" + this.getAttribute("x") + "&shooty=" + this.getAttribute("y");
+        }
+        guess_item_array.push(celldiv);
+        bgt.appendChild(celldiv);
+    }
+    for(i=0, ship_color_index=3; i < response['adversary_ship_array'].length; i+=5, ship_color_index+=1) {
+        //note: i+0=lenght; i+1=x; i+2=y; i+3=orientation; i+4=floatingunits
+        if(response['adversary_ship_array'][i] == 0) {
+            //ship has not been sunk yet, continue
+            continue;
+        }
+        //color the grid items with the color associated to the ship
+        for(j=0; j<response['adversary_ship_array'][i]; j++) {
+            shipx = response['adversary_ship_array'][i+1] + (response['adversary_ship_array'][i+3] ? j : 0);
+            shipy = response['adversary_ship_array'][i+2] + (response['adversary_ship_array'][i+3] ? 0 : j);
+            guess_item_array[shipx*10 + shipy].style.backgroundColor = battleship_grid_colors[ship_color_index];
+        }
+    }
+
+    var own_item_array = new Array;
+    for(i=0; i < 100; i++) {
+        var celldiv = document.createElement("div");
+        celldiv.className = "grid-item";
+        bot.appendChild(celldiv);
+        celldiv.style.backgroundColor = battleship_grid_colors[response['own_table'][i]];
+        own_item_array.push(celldiv);
+    }    
+
+    player_types = ["NO_PLAYER", "PLAYER1", "PLAYER2"];
+    game_statuses = ["NONE", "GAME_PLAYER_1_TO_JOIN", "GAME_PLAYER_2_TO_JOIN", "GAME_PLAYER_1_TURN", "GAME_PLAYER_2_TURN", "GAME_PLAYER_1_WINS", "GAME_PLAYER_2_WINS"];
+    operation_outcomes = ["NO_OUTCOME", "REFRESHED", "NEW_GAME", "GAME_IN_PROGRESS", "WRONG_PLAYER", "EXPECTED_OTHER_PLAYER", "PLAYER_JOINED", "MOVE_ACCEPTED", "OVERSIZED_SHIP", "BAD_SHIP_ORIENTATION", "SHIP_OVERLAP", "CANNOT_DEPLOY_SHIP", "SHIP_OUT_OF_BOUNDARIES", "SHOT_OUT_OF_BOUNDARIES", "SHOT_ALREADY_PLAYED"];
+
+    //display player type
+    playertypediv = document.getElementById("player-type");
+    playertypediv.innerHTML = "You are: " + player_types[response['player_type']];
+
+    //display op outcome
+    operationoutcomediv = document.getElementById("operation-outcome");
+    operationoutcomediv.innerHTML = "Operation outcome: " + operation_outcomes[response['operation_outcome']];
+
+    //display game status
+    gamestatusdiv = document.getElementById("game-status");
+    gamestatusdiv.innerHTML = "Game status: " + game_statuses[response['game_status']];
+
+    //refresh page if it is not the player's turn
+    if(token && response['player_type']>0 && response['game_status'] != response['player_type']+2) {
+        setTimeout(function(){ window.location = "battleship?operation=refresh&token=" + token; }, 7000);
+    }
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,6 @@
+Make sure you first build the battleship chaincode enclave, just as other examples.
+
+In the integration folder, execute the battleship start script. This will start the ledger and install and instantiate the battleship chaincode.
+
+In the example/battleship/flask folder, do a make run. This will install a virtual environment with Flask and start a webserver listening on 127.0.0.1:5000.
+You can connect to the webserver and... enjoy battleship.

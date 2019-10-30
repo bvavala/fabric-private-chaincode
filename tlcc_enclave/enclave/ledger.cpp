@@ -700,7 +700,8 @@ int parse_endorser_transaction(
                 if (function.compare("__setup") != 0)
                 {
                     LOG_DEBUG("Ledger: Validate ECC tx");
-                    uint8_t response_data[96];
+                    //uint8_t response_data[96];
+                    uint8_t response_data[ 1 << 14 ];
                     uint32_t response_len = 0;
                     uint8_t signature[96];
                     uint32_t signature_len = 0;
@@ -785,6 +786,9 @@ int parse_endorser_transaction(
 
                     std::string base64_hashhash = base64_encode((const unsigned char*)hash2, 32);
                     LOG_DEBUG("Ledger: ecc sig hash-hash (base64): %s", base64_hashhash.c_str());
+
+                    std::string base64_signature = base64_encode((const unsigned char*)signature, signature_len);
+                    LOG_DEBUG("Ledger: ecc sig (base64): %s", base64_signature.c_str());
 
                     std::string base64_pk = base64_encode((const unsigned char*)pk, pk_len);
                     LOG_DEBUG("Ledger: ecc sig pk (base64): %s", base64_pk.c_str());

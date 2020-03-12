@@ -8,8 +8,15 @@ include $(TOP)/build.mk
 PROTO_BUILD_DIR := enclave/protos
 BUILD_DIR := _build
 
+nanopb:
+ifndef NANOPB_PATH
+	@echo "NANOPB_PATH undefined, check README"; exit 1
+endif
+	git clone https://github.com/nanopb/nanopb.git ${NANOPB_PATH}
+	-cd ${NANOPB_PATH} && git checkout nanopb-0.3.9.2 && cd generator/proto && make
+
 .PHONY: protos
-protos: $(PROTO_BUILD_DIR)
+protos: nanopb $(PROTO_BUILD_DIR)
 
 $(PROTO_BUILD_DIR):
 	./generate_protos.sh $@

@@ -7,15 +7,16 @@
 
 #include "sgxcclib.h"
 #include "common-sgxcclib.h"  //CHECK_SGX_ERROR_AND_RETURN_ON_ERROR macro
+#include "sgx_attestation_type.h"  //CHECK_SGX_ERROR_AND_RETURN_ON_ERROR macro
 #include "enclave_u.h"
 
 #include <stdbool.h>
 #include <string.h>
 
-// for RA:
+//// for RA:
 #include "sgx_quote.h"
-#include "sgx_report.h"
-#include "sgx_uae_service.h"
+//#include "sgx_report.h"
+//#include "sgx_uae_service.h"
 
 #include "sgx_urts.h"
 
@@ -127,4 +128,31 @@ void ocall_get_state_by_partial_composite_key(const char* key,
 void ocall_print_string(const char* str)
 {
     golog(str);
+}
+
+void ocall_init_quote(
+        uint8_t *target, uint32_t target_len,
+        uint8_t *egid, uint32_t egid_len)
+{
+    int ret = sgx_init_quote(target, egid);
+    CHECK_SGX_ERROR_AND_RETURN_ON_ERROR(ret)
+}
+
+void ocall_get_quote(
+        uint8_t *spid, uint32_t spid_len, uint8_t *report, uint32_t report_len, uint8_t *quote, uint32_t max_quote_len, uint32_t *actual_quote_len)
+{
+    int ret;
+    uint32_t required_quote_size = 0;
+    ret = sgxcc_get_quote_size(NULL, 0, &required_quote_size);
+    CHECK_SGX_ERROR_AND_RETURN_ON_ERROR(ret)
+    //asumme enough quote size
+    ret = sgx_get_quote(report, SGX_QUOTE_SIGN_TYPE,
+        (sgx_spid_t*)spid,  // spid
+        NULL,               // nonce
+        NULL,//p_sig_rl,           // sig_rl
+        0,//sig_rl_size,        // sig_rl_size
+        NULL,               // p_qe_report
+        (sgx_quote_t*)quote, required_quote_size);
+    CHECK_SGX_ERROR_AND_RETURN_ON_ERROR(ret)
+    *actual_quote_len = required_quote_size;
 }

@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+SHELL=/bin/bash
+
 GOFLAGS :=
 GO := go $(GOFLAGS)
 
@@ -19,3 +21,5 @@ JAVA ?= java
 PLANTUML_JAR ?= plantuml.jar
 PLANTUML_CMD ?= $(JAVA) -jar $(PLANTUML_JAR)
 PLANTUML_IMG_FORMAT ?= png # pdf / png / svg
+
+IAS_CREDENTIAL_PATH ?= ${FPC_PATH}/integration/config/ias

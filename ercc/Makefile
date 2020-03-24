@@ -11,7 +11,10 @@ VSCC_OUT = ercc-vscc.so
 DECO_SRC = attestation/ias_credentials/decoration.go
 DECO_OUT = ercc-decorator.so
 
-build: ias-keys provider ercc vscc-plugin decorator-plugin
+ERCC_NAME?=ercc
+DOCKER_IMAGE?=$$(docker images | grep -- -$(ERCC_NAME)- | awk '{print $$1;}')
+
+build: ias-keys provider attestation ercc vscc-plugin decorator-plugin
 
 .PHONY: .sgx_mode
 
@@ -42,6 +45,10 @@ ifeq (${SGX_MODE}, SIM)
 	fi;
 endif
 
+.PHONY: attestation
+attestation:
+	$(MAKE) -C attestation build
+
 provider: $(SGX_MODE_DEPENDENCY) $(GO_TARGETS)
 
 $(GO_TARGETS): $(SGX_MODE_DEPENDENCY) $(GO_TEMPLATES)
@@ -50,7 +57,7 @@ $(GO_TARGETS): $(SGX_MODE_DEPENDENCY) $(GO_TEMPLATES)
 
 
 ercc:
-	$(GO) build
+	$(GO) build -o ercc cmd/main.go
 
 vscc-plugin: $(VSCC_SRC)
 	$(GO) build -o $(VSCC_OUT) -buildmode=plugin $^
@@ -58,18 +65,22 @@ vscc-plugin: $(VSCC_SRC)
 decorator-plugin: $(DECO_SRC)
 	$(GO) build -o $(DECO_OUT) -buildmode=plugin $^
 
+docker-ercc:
+	echo "\033[1;33mWARNING: pre-building $(DOCKER_IMAGE) docker image\033[0m"
+	$(DOCKER) build -t $(DOCKER_IMAGE) -f Dockerfile.ercc ..
+
 test: build
-	$(GO) test -v ./...
+	LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):$(FPC_PATH)/ercc/attestation/_build/ $(GO) test -v ./...
 
 clean: docker-clean
+	$(MAKE) -C attestation $@
 	$(GO) $@
 	rm -rf $(GO_TARGETS) .sgx_mode
+	rm -f ercc
 
 .sgx_mode:
 	@echo $(SGX_MODE) > $@
 
-ERCC_NAME?=ercc
-DOCKER_IMAGE?=$$(docker images | grep -- -$(ERCC_NAME)- | awk '{print $$1;}')
 
 docker-clean:
 	-if [ ! -z "$(DOCKER_IMAGE)" ]; then docker rmi -f $(DOCKER_IMAGE); fi

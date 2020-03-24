@@ -331,7 +331,10 @@ handle_channel_join() {
     try $RUN ${FABRIC_BIN_DIR}/peer "${ARGS_EXEC[@]}"
 
     # - handle ercc
-    say "Installing & Instantiating ercc on channel '${CHAN_ID}' ..."
+    say "Building & Installing & Instantiating ercc on channel '${CHAN_ID}' ..."
+    #   - build ercc
+    DOCKER_IMAGE_NAME=$(${FPC_DOCKER_NAME_CMD} --cc-name ${ERCC_ID} --cc-version ${ERCC_VERSION} --net-id ${NET_ID} --peer-id ${PEER_ID}) || die "could not get ercc docker image name"
+    try make DOCKER_IMAGE=${DOCKER_IMAGE_NAME} -C ${FPC_TOP_DIR}/ercc docker-ercc
     #   - install ercc
     try $RUN ${FABRIC_BIN_DIR}/peer chaincode install -n ${ERCC_ID} -v ${ERCC_VERSION} -p github.com/hyperledger-labs/fabric-private-chaincode/ercc/cmd
     sleep 1

@@ -15,6 +15,8 @@
 
 #include "sgx_utils.h"
 
+#include "ctl.h"
+
 extern sgx_ec256_private_t enclave_sk;
 extern sgx_ec256_public_t enclave_pk;
 
@@ -255,27 +257,39 @@ int ecall_cc_invoke(const char* encoded_args,
 {
     LOG_DEBUG("ecall_cc_invoke: \tArgs: %s", encoded_args);
 
+    int ret;
     t_shim_ctx_t ctx;
     ctx.u_shim_ctx = u_shim_ctx;
     ctx.encoded_args = encoded_args;
 
-    // call chaincode invoke logic: creates output and response
-    // output, response <- F(args, input)
-    int ret;
-    if (strlen(pk) == 0)
+    ctx.json_args = ctx.encoded_args;
+    if(is_ctl_invoke(&ctx))
     {
-        // clear input
-        ctx.json_args = ctx.encoded_args;
-        ret = invoke(response, response_len_in, response_len_out, &ctx);
+        LOG_DEBUG("ctl invoke");
+        ret = ctl_invoke(response, response_len_in, response_len_out, &ctx);
+        LOG_DEBUG("ctl invoke returned");
     }
     else
     {
-        // encrypted input
-        ret = invoke_enc(pk, response, response_len_in, response_len_out, &ctx);
+        // call chaincode invoke logic: creates output and response
+        // output, response <- F(args, input)
+        LOG_DEBUG("chaincode invoke");
+        if (strlen(pk) == 0)
+        {
+            // clear input
+            ctx.json_args = ctx.encoded_args;
+            ret = invoke(response, response_len_in, response_len_out, &ctx);
+        }
+        else
+        {
+            // encrypted input
+            ret = invoke_enc(pk, response, response_len_in, response_len_out, &ctx);
+        }
     }
 
     if (ret != 0)
     {
+        LOG_DEBUG("call failed");
         return SGX_ERROR_UNEXPECTED;
     }
 

@@ -17,7 +17,15 @@ import (
 	"github.com/hyperledger-labs/fabric-private-chaincode/ercc/attestation/mock"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	pb "github.com/hyperledger/fabric/protos/peer"
+
+    "github.com/golang/protobuf/proto"
+    cred "github.com/hyperledger-labs/fabric-private-chaincode/common/protos/chaincode_enclave/go"
 )
+
+// #cgo CFLAGS: -I/opt/intel/sgxsdk/include -I${SRCDIR}/attestation/verify_ias_report
+// #cgo LDFLAGS: -L${SRCDIR}/attestation/_build -lverifyiasreport -lcrypto
+// #include "verify-report.h"
+import "C"
 
 var logger = shim.NewLogger("ercc")
 
@@ -60,9 +68,46 @@ func (ercc *EnclaveRegistryCC) Invoke(stub shim.ChaincodeStubInterface) pb.Respo
 		return ercc.getAttestationReport(stub, args)
 	} else if function == "getSPID" { //get SPID
 		return ercc.getSPID(stub, args)
-	}
+	} else if function == "test_ias" {
+        ret := C.test_ias()
+        logger.Debugf("test ias %d", int(ret))
+        a := []byte{'c', 'i', 'a', 'o'}
+        return shim.Success(a)
+    } else if function == "newEnclave" {
+        return ercc.newEnclave(stub, args)
+    }
 
 	return shim.Error("Received unknown function invocation: " + function)
+}
+
+// ============================================================
+// newEnclave
+// ============================================================
+func (ercc *EnclaveRegistryCC) newEnclave(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+    logger.Debugf("ERCC: new enclave");
+    logger.Debugf("ercc arg %s", args[0])
+    pbBytes, err := base64.StdEncoding.DecodeString(args[0])
+    if err != nil {
+        return shim.Error("Cannot retrieve protobuf: " + err.Error())
+    }
+
+    logger.Debugf("ercc empty cred")
+
+    credentials := &cred.Credentials{}
+    logger.Debugf("ercc parse protobuf")
+    if err := proto.Unmarshal(pbBytes, credentials); err != nil {
+        logger.Debugf("ercc parse protobuf error")
+        return shim.Error("Cannot parse protobuf: " + err.Error())
+    }
+
+    logger.Debugf("ercc get verb")
+    verb := string(credentials.GetVerb())
+    //if verb == nil {
+    //    return shim.Error("verb missing");
+    //}
+    logger.Debugf("verb: %s", verb)
+
+    return shim.Success(nil)
 }
 
 // ============================================================

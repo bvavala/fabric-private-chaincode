@@ -1,0 +1,15 @@
+# Copyright 2020 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+FROM hyperledger/fabric-private-chaincode-ccenv:latest
+
+ARG CC_NAME="ercc"
+ARG CC_PATH="/usr/local/bin"
+
+copy ercc/${CC_NAME} ${CC_PATH}/chaincode
+copy ercc/ercc-decorator.so ${CC_PATH}
+copy ercc/ercc-vscc.so ${CC_PATH}
+copy ercc/attestation/_build/libverifyiasreport.so ${CC_PATH}
+
+WORKDIR ${CC_PATH}

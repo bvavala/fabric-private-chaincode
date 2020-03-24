@@ -24,3 +24,5 @@ typedef struct t_shim_ctx
     const char* encoded_args;  // args as passed from client-side shim, potentially encrypted
     const char* json_args;     // clear-text args from client-side shim
 } t_shim_ctx_t;
+
+bool is_ctl_invoke(t_shim_ctx_t* ctx);

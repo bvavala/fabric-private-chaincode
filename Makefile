@@ -9,6 +9,7 @@ include $(TOP)/build.mk
 SUB_DIRS = utils ercc ecc_enclave ecc tlcc_enclave tlcc examples integration demo # docs
 PLUGINS = ercc ecc_enclave ecc tlcc_enclave tlcc
 FPC_SDK = utils/fabric ecc_enclave ecc
+FPC = utils/fabric ercc ecc_enclave ecc tlcc_enclave tlcc examples
 
 .PHONY: license
 
@@ -33,6 +34,7 @@ linter: gotools build
 gotools:
 	# install goimports if not present
 	$(GO) get golang.org/x/tools/cmd/goimports
+	$(GO) get google.golang.org/protobuf/cmd/protoc-gen-go
 
 godeps: gotools
 	$(GO) get github.com/spf13/viper
@@ -50,3 +52,6 @@ plugins:
 
 fpc-sdk: godeps
 	$(foreach DIR, $(FPC_SDK), $(MAKE) -C $(DIR) build || exit;)
+
+fpc:
+	$(foreach DIR, $(FPC), $(MAKE) -C $(DIR) build || exit;)

@@ -3,7 +3,7 @@
 # Copyright Intel Corp. All Rights Reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
-
+set -x
 SCRIPTDIR="$(dirname $(readlink --canonicalize ${BASH_SOURCE}))"
 FPC_TOP_DIR="${SCRIPTDIR}/.."
 FABRIC_SCRIPTDIR="${FPC_TOP_DIR}/fabric/bin/"
@@ -19,8 +19,13 @@ CC_ID=echo_test
 ENCLAVE_SO_PATH=examples/echo/_build/lib/
 
 CC_VERS=0
-num_rounds=10
+num_rounds=1
 FAILURES=0
+
+IAS_CREDENTIAL_PATH=${FPC_PATH}/integration/config/ias
+SPID="`cat $IAS_CREDENTIAL_PATH/spid.txt`"
+echo SPID=$SPID
+sleep 3
 
 echo_test() {
     # install, init, and register (auction) chaincode
@@ -34,8 +39,20 @@ echo_test() {
     for (( i=1; i<=$num_rounds; i++ ))
     do
         # echos
-        try_r ${PEER_CMD} chaincode invoke -o ${ORDERER_ADDR} -C ${CHAN_ID} -n ${CC_ID} -c '{"Args": ["echo-'$i'"]}' --waitForEvent
-        check_result "echo-$i"
+        #try_r ${PEER_CMD} chaincode invoke -o ${ORDERER_ADDR} -C ${CHAN_ID} -n ${CC_ID} -c '{"Args": ["echo-'$i'"]}' --waitForEvent
+        #check_result "echo-$i"
+        try_r ${PEER_CMD} chaincode invoke -o ${ORDERER_ADDR} -C ${CHAN_ID} -n ${CC_ID} -c '{"Args": ["ctl_create", "'$SPID'"]}'
+        echo "ctl_create: $RESPONSE"
+        CI_RESPONSE=${RESPONSE}
+        CI_RESPONSE=${CI_RESPONSE##*ResponseData\\\":\\\"}
+        CI_RESPONSE=${CI_RESPONSE%%\\*}
+        # Convert and de-encrypt it
+        CREDENTIALS=$(${ENCLAVE_MANAGER_CMD} "`echo ${CI_RESPONSE} | base64 -d | base64 --wrap=0`")
+        echo creds=$CREDENTIALS
+        echo $CREDENTIALS | base64 -d --wrap=0
+
+        try ${PEER_CMD} chaincode invoke -o ${ORDERER_ADDR} -C ${CHAN_ID} -n ${ERCC_ID} -c '{"args":["newEnclave", "'$CREDENTIALS'"]}'
+
      done
 }
 

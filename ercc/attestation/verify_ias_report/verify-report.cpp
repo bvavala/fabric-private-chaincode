@@ -217,7 +217,3 @@ verify_status_t verify_enclave_quote_status(const char* ias_report, int ias_repo
     return VERIFY_FAILURE;
 }
 
-int test_ias()
-{
-    return 11;
-}

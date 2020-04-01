@@ -13,25 +13,21 @@
 #include "sgx_utils.h"
 #include "types.h"
 #include "utils.h"
+#include "error.h"
+
+#include "cc_data.h"
 
 #include <pb_encode.h>
 #include "protos/chaincode_enclave/credentials.pb.h"
 
 extern sgx_ec256_public_t enclave_pk;
 
-#define COND_GOTO_ERR(b) \
-    if(b) \
-    { \
-        LOG_ERROR("error at %s-%d", __FILE__, __LINE__); \
-        goto err; \
-    }
-
 int ctl_invoke(uint8_t* response,
     uint32_t max_response_len,
     uint32_t* actual_response_len,
     shim_ctx_ptr_t ctx)
 {
-    LOG_DEBUG("running ctl invoke");
+    LOG_DEBUG("ctl invoke");
     std::string func_name;
     std::vector<std::string> params;
 
@@ -45,6 +41,13 @@ int ctl_invoke(uint8_t* response,
     if(!func_name.compare("ctl_create"))
     {
         LOG_DEBUG("ctl_create");
+
+        COND2ERR(!g_cc_data.generate());
+        LOG_DEBUG("ccdata generate passed");
+        COND2ERR(!g_cc_data.to_public_proto(params[0], response, max_response_len, (size_t*)actual_response_len));
+        return 0;
+
+
         sgx_report_t report;
         sgx_report_data_t report_data = {{0}};
 
@@ -94,10 +97,10 @@ int ctl_invoke(uint8_t* response,
         // write response
         pb_ostream_t ostream = pb_ostream_from_buffer(response, max_response_len);
         const unsigned char *verb = (const unsigned char*)"CREATE";
-        COND_GOTO_ERR(!pb_encode_tag(&ostream, PB_WT_STRING, credentials_verb_tag));
-        COND_GOTO_ERR(!pb_encode_string(&ostream, verb, strlen((const char*)verb)+1));
-        COND_GOTO_ERR(!pb_encode_tag(&ostream, PB_WT_STRING, credentials_enclaveAttestation_tag));
-        COND_GOTO_ERR(!pb_encode_string(&ostream, (const unsigned char*)b64quote.c_str(), b64quote.length()));
+        COND2ERR(!pb_encode_tag(&ostream, PB_WT_STRING, credentials_verb_tag));
+        COND2ERR(!pb_encode_string(&ostream, verb, strlen((const char*)verb)+1));
+        COND2ERR(!pb_encode_tag(&ostream, PB_WT_STRING, credentials_enclaveAttestation_tag));
+        COND2ERR(!pb_encode_string(&ostream, (const unsigned char*)b64quote.c_str(), b64quote.length()));
 
         *actual_response_len = ostream.bytes_written;
         LOG_DEBUG("ctl_create return %d", *actual_response_len);

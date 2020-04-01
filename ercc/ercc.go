@@ -12,7 +12,8 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
-
+	"encoding/hex"
+    "net/url"
 	"github.com/hyperledger-labs/fabric-private-chaincode/ercc/attestation"
 	"github.com/hyperledger-labs/fabric-private-chaincode/ercc/attestation/mock"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
@@ -24,8 +25,16 @@ import (
 
 // #cgo CFLAGS: -I/opt/intel/sgxsdk/include -I${SRCDIR}/attestation/verify_ias_report
 // #cgo LDFLAGS: -L${SRCDIR}/attestation/_build -lverifyiasreport -lcrypto
+// #include "stdlib.h"
 // #include "verify-report.h"
 import "C"
+import "unsafe"
+
+type VerificationReportJSON struct {
+    IasSignature string     `json:"iasSignature"`
+    IasCertificates string  `json:"iasCertificates"`
+    IasReport string        `json:"iasReport"`
+}
 
 var logger = shim.NewLogger("ercc")
 
@@ -68,11 +77,6 @@ func (ercc *EnclaveRegistryCC) Invoke(stub shim.ChaincodeStubInterface) pb.Respo
 		return ercc.getAttestationReport(stub, args)
 	} else if function == "getSPID" { //get SPID
 		return ercc.getSPID(stub, args)
-	} else if function == "test_ias" {
-        ret := C.test_ias()
-        logger.Debugf("test ias %d", int(ret))
-        a := []byte{'c', 'i', 'a', 'o'}
-        return shim.Success(a)
     } else if function == "newEnclave" {
         return ercc.newEnclave(stub, args)
     }
@@ -85,27 +89,99 @@ func (ercc *EnclaveRegistryCC) Invoke(stub shim.ChaincodeStubInterface) pb.Respo
 // ============================================================
 func (ercc *EnclaveRegistryCC) newEnclave(stub shim.ChaincodeStubInterface, args []string) pb.Response {
     logger.Debugf("ERCC: new enclave");
-    logger.Debugf("ercc arg %s", args[0])
     pbBytes, err := base64.StdEncoding.DecodeString(args[0])
     if err != nil {
         return shim.Error("Cannot retrieve protobuf: " + err.Error())
     }
 
-    logger.Debugf("ercc empty cred")
-
     credentials := &cred.Credentials{}
-    logger.Debugf("ercc parse protobuf")
     if err := proto.Unmarshal(pbBytes, credentials); err != nil {
-        logger.Debugf("ercc parse protobuf error")
         return shim.Error("Cannot parse protobuf: " + err.Error())
     }
 
-    logger.Debugf("ercc get verb")
-    verb := string(credentials.GetVerb())
-    //if verb == nil {
-    //    return shim.Error("verb missing");
-    //}
-    logger.Debugf("verb: %s", verb)
+    verbBytes := credentials.GetVerb()
+    if verbBytes == nil {
+        return shim.Error("verb missing");
+    }
+
+    reportDataFieldsProtoBytes := credentials.GetReportDataFields()
+    if reportDataFieldsProtoBytes == nil {
+        return shim.Error("reportDataFieldsProto missing");
+    }
+
+    reportDataHash := sha256.Sum256(reportDataFieldsProtoBytes)
+    logger.Debugf("reportData hash: %s",  hex.Dump(reportDataHash[:]))
+
+    b64VerificationReportBytes := credentials.GetVerificationReport()
+    if b64VerificationReportBytes == nil {
+        return shim.Error("missing verification report")
+    }
+    verificationReportBytes, err := base64.StdEncoding.DecodeString(string(b64VerificationReportBytes))
+    if err != nil {
+        return shim.Error("cannot decode verification report")
+    }
+
+    verificationReportJSON := VerificationReportJSON{}
+    err = json.Unmarshal(verificationReportBytes, &verificationReportJSON)
+    if err != nil {
+        return shim.Error("cannot unmarshal verification report")
+    }
+
+    splitIasCertificate := strings.SplitAfterN(verificationReportJSON.IasCertificates, "-----END%20CERTIFICATE-----%0A", 2)
+    if len(splitIasCertificate) != 2 {
+        return shim.Error("unexpected number of IAS certificates")
+    }
+    splitIasCertificate[0], err = url.PathUnescape(splitIasCertificate[0])
+    if err != nil {
+        return shim.Error("cannot unescape url chars")
+    }
+    splitIasCertificate[1], err = url.PathUnescape(splitIasCertificate[1])
+    if err != nil {
+        return shim.Error("cannot unescape url chars")
+    }
+
+    pCert1 := C.CString(splitIasCertificate[1])
+    defer C.free(unsafe.Pointer(pCert1))
+    ret := C.verify_ias_certificate_chain(pCert1)
+    if ret != 0 {
+        return shim.Error("IAS Cert 1: verification failed")
+    }
+
+    pCert0 := C.CString(splitIasCertificate[0])
+    defer C.free(unsafe.Pointer(pCert0))
+    ret = C.verify_ias_certificate_chain(pCert0)
+    if ret != 0 {
+        return shim.Error("IAS Cert 0: verification failed")
+    }
+
+    logger.Debugf("IAS Certificates: verified")
+
+    pReport := C.CString(verificationReportJSON.IasReport)
+    defer C.free(unsafe.Pointer(pReport))
+    pSignature := C.CString(verificationReportJSON.IasSignature)
+    defer C.free(unsafe.Pointer(pSignature))
+    ret = C.verify_ias_report_signature(
+        pCert0,
+        pReport,
+        C.uint(len(verificationReportJSON.IasReport)),
+        pSignature,
+        C.uint(len(verificationReportJSON.IasSignature)))
+    if ret != 0 {
+        return shim.Error("IAS Report Verification: failed")
+    }
+    logger.Debugf("IAS Report: verified")
+
+    ret = C.verify_enclave_quote_status(
+        pReport,
+        C.int(len(verificationReportJSON.IasReport)),
+        1)
+    if ret != 0 {
+        return shim.Error("Quote Status verification: failed")
+    }
+    logger.Debugf("Quote Status: verified")
+
+    //TODO check report data
+    //TODO check channel id
 
     return shim.Success(nil)
 }

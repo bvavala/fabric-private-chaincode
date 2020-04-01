@@ -3,10 +3,19 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+set(COMMON_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../common)
+
+IF("${SGX_MODE}" STREQUAL "SIM")
+    SET(IAS_CA_CERT_REQUIRED_FLAGS "")
+ELSE()
+    SET(IAS_CA_CERT_REQUIRED_FLAGS "-DIAS_CA_CERT_REQUIRED")
+ENDIF()
+
+
 set(SOURCE_FILES
     ias-certificates.cpp
     verify-report.cpp
-    c11_support.cpp
+    ${COMMON_SOURCE_DIR}/c11_support.cpp
     )
 
 set(cleanup_files
@@ -23,16 +32,17 @@ set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${cleanup_files
 #    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 #    )
 
-add_library(libverifyiasreport SHARED ${SOURCE_FILES})
+add_library(verifyiasreport SHARED ${SOURCE_FILES})
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${COMMON_SOURCE_DIR}
     ${SGX_SDK}/include
     )
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${SGX_COMMON_CFLAGS} -fPIC -Wall -Wno-attributes -std=c11")
+TARGET_COMPILE_OPTIONS(verifyiasreport PRIVATE ${IAS_CA_CERT_REQUIRED_FLAGS} "-fpie" "-fPIC" "-fstack-protector" "-std=c++11" "-Wall")
 
-set_target_properties(libverifyiasreport PROPERTIES PREFIX "")
+#set_target_properties(libverifyiasreport PROPERTIES PREFIX "")
 
 #target_link_libraries(libverifyiasreport
 #    -L${SGX_LIBRARY_PATH} -l${SGX_URTS_LIB} -l${SGX_USVC_LIB} -L${SGX_SSL_LIBRARY_PATH} -lsgx_usgxssl)

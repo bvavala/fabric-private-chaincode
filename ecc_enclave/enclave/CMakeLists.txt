@@ -14,8 +14,12 @@ set(SOURCE_FILES
     shim_internals.cpp
     ctl.cpp
     ${COMMON_SOURCE_DIR}/enclave/common.cpp
+    ${COMMON_SOURCE_DIR}/enclave/cc_data.cpp
+    ${COMMON_SOURCE_DIR}/enclave/key_ring.cpp
+    ${COMMON_SOURCE_DIR}/enclave/report_data.cpp
     ${COMMON_SOURCE_DIR}/base64/base64.cpp
     ${COMMON_SOURCE_DIR}/utils.c
+    ${COMMON_SOURCE_DIR}/c11_support.cpp
     ${COMMON_SOURCE_DIR}/json/parson.c
     ${COMMON_SOURCE_DIR}/logging.c
     ${COMMON_SOURCE_DIR}/protos/chaincode_enclave/credentials.pb.c

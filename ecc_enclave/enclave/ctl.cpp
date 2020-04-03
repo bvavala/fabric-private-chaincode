@@ -42,7 +42,7 @@ int ctl_invoke(uint8_t* response,
     {
         LOG_DEBUG("ctl_create");
 
-        COND2ERR(!g_cc_data.generate());
+        COND2ERR(!g_cc_data.generate(ctx));
         LOG_DEBUG("ccdata generate passed");
         COND2ERR(!g_cc_data.to_public_proto(params[0], response, max_response_len, (size_t*)actual_response_len));
         return 0;

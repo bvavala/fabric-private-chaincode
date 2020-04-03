@@ -8,17 +8,32 @@
 #include "protos/chaincode_enclave/credentials.pb.h"
 #include "error.h"
 #include "report_data.h"
+#include "shim.h"
+#include "logging.h"
 
 cc_data g_cc_data;
 
-bool cc_data::generate()
+bool cc_data::generate(shim_ctx_ptr_t& ctx)
 {
-    return kr.generate();
+    {
+        char channel_id[256];
+        get_channel_id((char*)channel_id, sizeof(channel_id), ctx);
+        channel_id_ = std::string(channel_id, sizeof(channel_id));
+        LOG_DEBUG("in-enclave channel id: %s", channel_id_.c_str());
+    }
+    {
+        char msp_id[256];
+        get_msp_id((char*)msp_id, sizeof(msp_id), ctx);
+        msp_id_ = std::string(msp_id, sizeof(msp_id));
+        LOG_DEBUG("in-enclave msp id: %s", msp_id_.c_str());
+    }
+
+    return kr_.generate();
 }
 
 bool cc_data::to_public_proto(const std::string& hex_spid, uint8_t* buf, size_t buf_size, size_t* out_size)
 {
-    report_data rd(kr);
+    report_data rd(kr_);
     pb_ostream_t ostream = pb_ostream_from_buffer(buf, buf_size);
     {
         // verb

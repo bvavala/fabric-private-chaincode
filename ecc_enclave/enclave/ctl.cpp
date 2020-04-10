@@ -11,7 +11,7 @@
 #include "sgx_report.h"
 #include "sgx_quote.h"
 #include "sgx_utils.h"
-#include "types.h"
+#include "fpc-types.h"
 #include "utils.h"
 #include "error.h"
 

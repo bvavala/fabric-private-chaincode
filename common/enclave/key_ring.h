@@ -7,6 +7,7 @@
 
 #include <string>
 #include "sgx_tcrypto.h"
+#include "pdo/common/crypto/crypto.h"
 
 typedef enum
 {
@@ -22,8 +23,12 @@ typedef enum
 class key_ring
 {
     private:
-        sgx_rsa3072_key_t decryption_key_;
-        sgx_rsa3072_public_key_t encryption_key_;
+        pdo::crypto::sig::PublicKey verification_key_;
+        pdo::crypto::sig::PrivateKey signature_key_;
+        pdo::crypto::pkenc::PublicKey encryption_key_;
+        pdo::crypto::pkenc::PrivateKey decryption_key_;
+        pdo::crypto::pkenc::PublicKey cc_encryption_key_;
+        pdo::crypto::pkenc::PrivateKey cc_decryption_key_;
 
     public:
         bool generate();

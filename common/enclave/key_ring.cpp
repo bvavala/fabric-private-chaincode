@@ -11,37 +11,26 @@
 
 bool key_ring::generate()
 {
-    // TODO create keys
+    // create keys
     {
-        //create the RSA keys
-        unsigned char temp1[SGX_RSA3072_KEY_SIZE];
-        unsigned char temp2[SGX_RSA3072_KEY_SIZE];
-        unsigned char temp3[SGX_RSA3072_KEY_SIZE];
-        unsigned char temp4[SGX_RSA3072_KEY_SIZE];
-        unsigned char temp5[SGX_RSA3072_KEY_SIZE];
-        //sgx_status_t ret = sgx_create_rsa_key_pair(
-        //        SGX_RSA3072_KEY_SIZE,
-        //        SGX_RSA3072_PUB_EXP_SIZE,
-        //        decryption_key_.mod,
-        //        decryption_key_.d,
-        //        decryption_key_.e,
-        //        (unsigned char*)&temp1,
-        //        (unsigned char*)&temp2,
-        //        (unsigned char*)&temp3,
-        //        (unsigned char*)&temp4,
-        //        (unsigned char*)&temp5);
-        //LOG_DEBUG("sgx_create_rsa_key_pair %d", ret);
-        //COND2ERR(SGX_SUCCESS != ret);
-        for(unsigned int i=0; i<sizeof(decryption_key_); i++)
+        try
         {
-            char* p = (char*)&decryption_key_;
-            *p = (char)i;
-        }
+            signature_key_.Generate(); //private key
+            verification_key_ = signature_key_.GetPublicKey();
+            decryption_key_.Generate(); //private key
+            encryption_key_ = decryption_key_.GetPublicKey();
+            cc_decryption_key_.Generate(); //private key
+            cc_encryption_key_ = cc_decryption_key_.GetPublicKey();
 
-        memcpy_s(encryption_key_.mod, sizeof(encryption_key_.mod),
-                decryption_key_.mod, sizeof(decryption_key_.mod));
-        memcpy_s(encryption_key_.exp, sizeof(encryption_key_.exp),
-                decryption_key_.e, sizeof(decryption_key_.e));
+            //debug
+            std::string s = verification_key_.Serialize();
+            LOG_DEBUG("enclave verification key: %s", s.c_str());
+        }
+        catch(...)
+        {
+            LOG_ERROR("error creating cryptographic keys");
+            return false;
+        }
     }
     LOG_DEBUG("keyring generate success");
     return true;

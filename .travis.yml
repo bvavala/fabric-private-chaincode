@@ -29,6 +29,7 @@ env:
     - OPENSSL_VERSION=1.1.0j
     - SGXSSL_VERSION=v2.4.1
     - SGXSSL=/opt/intel/sgxssl
+    - SGX_SSL=$SGXSSL
     # NANOPB
     - NANOPB_VERSION=0.3.9.2
     - NANOPB_PATH=${HOME}/nanopb

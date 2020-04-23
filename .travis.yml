@@ -52,6 +52,8 @@ env:
     - PROTOC_CMD=${PROTO_DIR}/bin/protoc
 
 before_install:
+  # openssl
+  - sudo apt-get -y install libssl-dev
   # git settings
   - git config --global user.email "fpc_tester@fpc"
   - git config --global user.name "fpc_tester"

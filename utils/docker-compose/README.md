@@ -74,7 +74,7 @@ is used. Otherwise it will use `core.yaml` and the regular peer image.
    so that the local repo will be in the build context for the docker daemon.
    ```
    cd $FPC_PATH
-   docker build -t hyperledger/fabric-peer-fpc -f utils/docker/peer/Dockerfile --build-arg FPC_REPO_URL=file:///tmp/build-src/.git --build-arg FPC_REPO_BRANCH=$(git rev-parse --abbrev-ref HEAD) .
+   docker build -t hyperledger/fabric-peer-fpc -f utils/docker/peer/Dockerfile --build-arg FPC_REPO_URL=file:///tmp/build-src/.git --build-arg FPC_REPO_BRANCH=$(git rev-parse HEAD) .
    ```
    Note: as this last scenario might be a common development action, it is defined as
    a makefile target `peer` in `$FPC_PATH/utils/docker/Makefile`.

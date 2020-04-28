@@ -42,7 +42,7 @@ endif
 build: base ccenv cc-builder
 
 run: dev
-	$(DOCKER) run $(DOCKER_DEV_RUN_OPTS) -it $(FPC_DOCKER_NAMESPACE)-dev:${FPC_VERSION}
+	$(DOCKER) run $(DOCKER_DEV_RUN_OPTS) --name fpc-development-${FPC_VERSION} -it $(FPC_DOCKER_NAMESPACE)-dev:${FPC_VERSION}
 
 clobber:
 	# first clean-up dangling images as that might prevent some of the later cleans
@@ -68,8 +68,17 @@ clobber:
 		$(FPC_DOCKER_CCENV_NAME) \
 		$(FPC_DOCKER_BASE_NAME) \
 	    ; do \
-		if [ ! -z "$$(docker images -q $${img}:$${tag})" ]; then ${DOCKER} rmi $${img}:$${tag} || exit 1; fi \
-	done; \
+		if [ ! -z "$$(docker images -q $${img}:$${tag})" ]; then \
+		    ${DOCKER} rmi $${img}:$${tag}; \
+		    if [ $$? != 0 ]; then \
+			if [ "$${img}" = "$(FPC_DOCKER_DEV_NAME)" ]; then \
+			    echo 1>&2 "Could not remove dev container '$(FPC_DOCKER_DEV_NAME)', ignoring error"; \
+			else \
+			    exit 1; \
+			fi \
+		    fi \
+		fi \
+	    done \
 	done
 
 

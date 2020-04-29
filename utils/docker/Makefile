@@ -116,7 +116,7 @@ peer: base
          $(DOCKER_DEV_BUILD_OPTS)\
          -f utils/docker/peer/Dockerfile\
          --build-arg FPC_REPO_URL=file:///tmp/cloned-local-fpc-git-repo\
-         --build-arg FPC_REPO_BRANCH=$$(git rev-parse HEAD)\
+         --build-arg FPC_REPO_BRANCH_TAG_OR_COMMIT=$$(git rev-parse HEAD)\
          --build-arg SGX_MODE=${SGX_MODE}\
          . )
 	$(DOCKER) tag $(FPC_DOCKER_PEER_NAME) $(FPC_DOCKER_PEER_NAME):${FPC_VERSION}
@@ -127,7 +127,7 @@ dev: base
          $(DOCKER_DEV_BUILD_OPTS)\
          -f utils/docker/dev/Dockerfile\
          --build-arg FPC_REPO_URL=file:///tmp/cloned-local-fpc-git-repo\
-         --build-arg FPC_REPO_BRANCH=$$(git rev-parse HEAD)\
+         --build-arg FPC_REPO_BRANCH_TAG_OR_COMMIT=$$(git rev-parse HEAD)\
          --build-arg SGX_MODE=${SGX_MODE}\
          . )
 	$(DOCKER) tag $(FPC_DOCKER_DEV_NAME) $(FPC_DOCKER_DEV_NAME):${FPC_VERSION}

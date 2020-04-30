@@ -87,7 +87,6 @@ docker-fpc-app: docker-boilerplate-ecc
 		--build-arg BOILERPLATE_EXTENSION=$(BOILERPLATE_EXTENSION)\
 		--build-arg enclave_so_path=$(DOCKER_ENCLAVE_SO_PATH)\
 		..
-	# tagging here, this is application image ..
 
 docker-run:
 	if [ "$(SGX_MODE)" = "HW" ]; then \

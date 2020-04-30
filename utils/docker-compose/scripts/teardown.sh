@@ -38,7 +38,7 @@ if [ "$1" == '--clean-slate' ]; then
 	# To minimize collateral damage we explicitly exclude the dev container
  	# and restrict to containers matching the net-id from core.yaml ..
 	echo "removing running containers and left-over chaincode images"
-	containers=$(docker ps -a | grep -v fpc-development- | grep "${NET_ID}-" | awk '{ print $3 }')
+	containers=$(docker ps -a | grep -v fpc-development- | grep "${NET_ID}-" | awk '{ print $1 }')
 	if [ ! -z "$containers" ]; then
 		docker rm --force ${containers}
 	fi

@@ -19,6 +19,7 @@ FPC_DOCKER_PEER_NAME = $(FPC_DOCKER_PEER_NAMESPACE)$(HW_EXTENSION)
 DOCKER_DAEMON_SOCKET ?= /var/run/docker.sock
 FABRIC_PEER_DAEMON_CHAINCODE_PORT ?= 7052
 
+DOCKER_DEV_CONTAINER_NAME = fpc-development-${FPC_VERSION}
 DOCKER_DEV_BUILD_OPTS ?=
 ifdef DOCKER_DEV_IMAGE_APT_ADD__PKGS
 	DOCKER_DEV_BUILD_OPTS += --build-arg APT_ADD_PKGS=$(DOCKER_DEV_IMAGE_APT_ADD__PKGS)
@@ -44,7 +45,11 @@ endif
 build: base ccenv cc-builder
 
 run: dev
-	$(DOCKER) run $(DOCKER_DEV_RUN_OPTS) --name fpc-development-${FPC_VERSION} -it $(FPC_DOCKER_NAMESPACE)-dev:${FPC_VERSION}
+	# Cleanup existing but non-running (note absence of --force in rm!) old dev containers
+	dev_container_id=$$(docker ps -a | grep ${DOCKER_DEV_CONTAINER_NAME} | awk '{ print $$1 }'); \
+	   [ -z  "$${dev_container_id}" ] || ${DOCKER} rm "$${dev_container_id}"
+	# Now run a new instance
+	$(DOCKER) run $(DOCKER_DEV_RUN_OPTS) --name ${DOCKER_DEV_CONTAINER_NAME} -it $(FPC_DOCKER_NAMESPACE)-dev:${FPC_VERSION}
 
 clobber:
 	# first clean-up dangling images as that might prevent some of the later cleans

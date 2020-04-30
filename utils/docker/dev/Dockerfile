@@ -84,7 +84,7 @@ ENV FPC_PATH=$GOPATH/src/github.com/hyperledger-labs/fabric-private-chaincode
 COPY .git /tmp/cloned-local-fpc-git-repo
 RUN git clone $FPC_REPO_URL $FPC_PATH \
   && cd $FPC_PATH \
-  && git checkout $FPC_REPO_BRANCH_TAGo_OR_COMMIT
+  && git checkout $FPC_REPO_BRANCH_TAG_OR_COMMIT
 # Note: could add --single-branch to below to speed-up and keep size smaller. But for now for a dev-image better keep complete repo
 
 # Build Fabric (after FPC as we need the FPC patches!)

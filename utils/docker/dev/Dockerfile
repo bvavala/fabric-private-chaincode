@@ -102,6 +102,7 @@ RUN cd $FABRIC_PATH \
 RUN apt install -y \
 	jq \
 	psmisc \
+	bc \
 	docker-compose
 
 WORKDIR $FPC_PATH

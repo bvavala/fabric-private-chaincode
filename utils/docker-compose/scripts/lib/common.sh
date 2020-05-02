@@ -9,6 +9,7 @@
 export PATH=${SCRIPT_DIR}/../bin:${PWD}:$PATH
 export FABRIC_CFG_PATH=${SCRIPT_DIR}/../network-config
 export FPC_PATH="${FPC_PATH:-${SCRIPT_DIR}/../../..}"
+if [ -z ${DOCKERD_FPC_PATH+x} ]; then export DOCKERD_FPC_PATH=${FPC_PATH}; fi
 
 # SGX mode: make sure it is set so we consistently use the same value also when we call make
 # Note: make might define in config*.mk its own value without necessarily it being an env variable
@@ -43,7 +44,8 @@ else
     export FABRIC_BIN_DIR=/project/src/github.com/hyperledger/fabric/.build/bin
 fi
 
-export NETWORK_CONFIG=${SCRIPT_DIR}/../network-config
+export NETWORK_CONFIG=${FPC_PATH}/utils/docker-compose/network-config
+export DOCKERD_NETWORK_CONFIG=${DOCKERD_FPC_PATH}/utils/docker-compose/network-config
 export COMPOSE_PROJECT_NAME="fabric$(echo ${FPC_CONFIG} | sed 's/[^a-zA-Z0-9]//g')"
 # Note: COMPOSE_PROJECT_NAME should have only chars in [a-zA-Z0-9], see https://github.com/docker/compose/issues/4002
 

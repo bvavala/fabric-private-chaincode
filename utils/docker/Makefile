@@ -25,6 +25,7 @@ ifdef DOCKER_DEV_IMAGE_APT_ADD__PKGS
 	DOCKER_DEV_BUILD_OPTS += --build-arg APT_ADD_PKGS=$(DOCKER_DEV_IMAGE_APT_ADD__PKGS)
 endif
 
+DOCKER_DEV_OPTIONAL_CMD= 
 
 DOCKER_GOPATH=/project
 DOCKER_FPC_PATH=$(DOCKER_GOPATH)/src/github.com/hyperledger-labs/fabric-private-chaincode
@@ -59,7 +60,7 @@ run: dev
 	dev_container_id=$$(docker ps -a | grep ${DOCKER_DEV_CONTAINER_NAME} | awk '{ print $$1 }'); \
 	   [ -z  "$${dev_container_id}" ] || ${DOCKER} rm "$${dev_container_id}"
 	# Now run a new instance
-	$(DOCKER) run $(DOCKER_DEV_RUN_OPTS) --name ${DOCKER_DEV_CONTAINER_NAME} -it $(FPC_DOCKER_NAMESPACE)-dev:${FPC_VERSION}
+	$(DOCKER) run $(DOCKER_DEV_RUN_OPTS) --name ${DOCKER_DEV_CONTAINER_NAME} -it $(FPC_DOCKER_NAMESPACE)-dev:${FPC_VERSION} ${DOCKER_DEV_OPTIONAL_CMD}
 
 clobber:
 	# first clean-up dangling images as that might prevent some of the later cleans

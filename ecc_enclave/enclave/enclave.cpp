@@ -214,9 +214,6 @@ int invoke_enc(const char* pk,
     return invoke(response, max_response_len, actual_response_len, ctx);
 }
 
-//#include "pdo/common/crypto/crypto.h"
-//bool crypto_created = false;
-
 // chaincode call
 // output, response <- F(args, input)
 // signature <- sign (hash,sk)
@@ -229,23 +226,6 @@ int ecall_cc_invoke(const char* encoded_args,
     void* u_shim_ctx)
 {
     LOG_DEBUG("ecall_cc_invoke: \tArgs: %s", encoded_args);
-
-//    // NOTE/TODO: this crypto part will be removed
-//    if (!crypto_created)
-//    {
-//        pdo::crypto::sig::PublicKey verification_key_;
-//        pdo::crypto::sig::PrivateKey signature_key_;
-//        signature_key_.Generate();  // private key
-//        verification_key_ = signature_key_.GetPublicKey();
-//        // debug
-//        std::string s = verification_key_.Serialize();
-//        LOG_DEBUG("enclave verification key: %s", s.c_str());
-//        crypto_created = true;
-//    }
-//    else
-//    {
-//        LOG_DEBUG("enclave crypto material created");
-//    }
 
     int ret;
     t_shim_ctx_t ctx;

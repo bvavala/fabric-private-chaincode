@@ -17,13 +17,13 @@ bool cc_data::generate(shim_ctx_ptr_t& ctx)
 {
     {
         char channel_id[256];
-        //get_channel_id((char*)channel_id, sizeof(channel_id), ctx);
+        get_channel_id((char*)channel_id, sizeof(channel_id), ctx);
         channel_id_ = std::string(channel_id, sizeof(channel_id));
         LOG_DEBUG("in-enclave channel id: %s", channel_id_.c_str());
     }
     {
         char msp_id[256];
-        //get_msp_id((char*)msp_id, sizeof(msp_id), ctx);
+        get_msp_id((char*)msp_id, sizeof(msp_id), ctx);
         msp_id_ = std::string(msp_id, sizeof(msp_id));
         LOG_DEBUG("in-enclave msp id: %s", msp_id_.c_str());
     }

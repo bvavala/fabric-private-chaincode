@@ -56,7 +56,7 @@ int ctl_invoke(uint8_t* response,
         spid_t spid;
         int ret;
 
-        //ocall_init_quote((uint8_t*)&qe_target_info, sizeof(qe_target_info), (uint8_t*)&egid, sizeof(egid));
+        ocall_init_quote((uint8_t*)&qe_target_info, sizeof(qe_target_info), (uint8_t*)&egid, sizeof(egid));
 
         //expect 32char string for spid
         for (unsigned int i = 0; i < 32; i += 2) {
@@ -88,7 +88,7 @@ int ctl_invoke(uint8_t* response,
 
         uint8_t quote[2048];
         uint32_t quote_size = 0;
-        //ocall_get_quote((uint8_t*)&spid, (uint32_t)sizeof(spid_t), (uint8_t*)&report, (uint32_t)sizeof(sgx_report_t), (uint8_t*)&quote, 2048, &quote_size);
+        ocall_get_quote((uint8_t*)&spid, (uint32_t)sizeof(spid_t), (uint8_t*)&report, (uint32_t)sizeof(sgx_report_t), (uint8_t*)&quote, 2048, &quote_size);
         LOG_DEBUG("recevied quote size %u", quote_size);
         std::string b64quote = base64_encode((const unsigned char*)quote, quote_size);
         *actual_response_len = b64quote.length();

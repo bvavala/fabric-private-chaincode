@@ -29,6 +29,14 @@ enclave {
                 [out, size=max_dn_len] char *dn, uint32_t max_dn_len,
                 [user_check] void *u_shim_ctx);
 
+        void ocall_get_channel_id(
+                [out, size=max_channel_id_len] char *channel_id, uint32_t max_channel_id_len,
+                [user_check] void *u_shim_ctx);
+
+        void ocall_get_msp_id(
+                [out, size=max_msp_id_len] char *msp_id, uint32_t max_msp_id_len,
+                [user_check] void *u_shim_ctx);
+
         void ocall_get_state(
                 [in, string] const char *key,
                 [out, size=max_val_len] uint8_t *val, uint32_t max_val_len, [out] uint32_t *val_len,
@@ -45,6 +53,16 @@ enclave {
                 [out, size=max_len] uint8_t *values, uint32_t max_len, [out] uint32_t *values_len,
                 [in, out] sgx_cmac_128bit_tag_t *cmac,
                 [user_check] void *u_shim_ctx);
+
+        void ocall_init_quote(
+                [out, size=target_len] uint8_t *target, uint32_t target_len,
+                [out, size=egid_len] uint8_t *egid, uint32_t egid_len);
+
+        void ocall_get_quote(
+                [in, size=spid_len] uint8_t *spid, uint32_t spid_len,
+                [in, size=report_len] uint8_t *report, uint32_t report_len,
+                [out, size=max_quote_len] uint8_t *quote, uint32_t max_quote_len,
+                [out] uint32_t *actual_quote_len);
     };
 
 };

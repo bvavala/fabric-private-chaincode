@@ -71,9 +71,9 @@ bool report_data::b64_quote(const std::string& hex_spid, std::string& b64_quote)
         spid.id[i/2] = byte;
     }
 
-    //COND2ERR(SGX_SUCCESS != ocall_init_quote((uint8_t*)&qe_target_info, sizeof(qe_target_info), (uint8_t*)&egid, sizeof(egid)));
-    //COND2ERR(SGX_SUCCESS != sgx_create_report(&qe_target_info, &report_data_, &report));
-    //COND2ERR(SGX_SUCCESS != ocall_get_quote((uint8_t*)&spid, (uint32_t)sizeof(sgx_spid_t), (uint8_t*)&report, (uint32_t)sizeof(sgx_report_t), (uint8_t*)&quote, 2048, &quote_size));
+    COND2ERR(SGX_SUCCESS != ocall_init_quote((uint8_t*)&qe_target_info, sizeof(qe_target_info), (uint8_t*)&egid, sizeof(egid)));
+    COND2ERR(SGX_SUCCESS != sgx_create_report(&qe_target_info, &report_data_, &report));
+    COND2ERR(SGX_SUCCESS != ocall_get_quote((uint8_t*)&spid, (uint32_t)sizeof(sgx_spid_t), (uint8_t*)&report, (uint32_t)sizeof(sgx_report_t), (uint8_t*)&quote, 2048, &quote_size));
 
     b64_quote = base64_encode((const unsigned char*)quote, quote_size);
 

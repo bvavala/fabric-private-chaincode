@@ -4,20 +4,32 @@
 # SPDX-License-Identifier: Apache-2.0
 
 include(CMakeVariables.txt)
+include(${CMAKE_MODULE_PATH}/NanoPB.cmake)
 
 set(SOURCE_FILES
     crypto.cpp
     enclave.cpp
     enclave_t.c
     shim.cpp
+    shim_internals.cpp
+    ctl.cpp
     ${COMMON_SOURCE_DIR}/enclave/common.cpp
+    ${COMMON_SOURCE_DIR}/enclave/cc_data.cpp
+    ${COMMON_SOURCE_DIR}/enclave/key_ring.cpp
+    ${COMMON_SOURCE_DIR}/enclave/report_data.cpp
     ${COMMON_SOURCE_DIR}/base64/base64.cpp
     ${COMMON_SOURCE_DIR}/utils.c
     ${COMMON_SOURCE_DIR}/json/parson.c
     ${COMMON_SOURCE_DIR}/logging.c
+    ${COMMON_SOURCE_DIR}/protos/credentials.pb.c
+    ${NANOPB_PATH}/pb_common.c
+    ${NANOPB_PATH}/pb_decode.c
+    ${NANOPB_PATH}/pb_encode.c
     )
 
 add_definitions(-DENCLAVE_CODE)
+add_definitions(-DPB_ENABLE_MALLOC)
+add_definitions(-DPB_FIELD_32BIT)
 
 set(cleanup_files
     ${CMAKE_CURRENT_SOURCE_DIR}/enclave_t.c
@@ -43,6 +55,7 @@ include_directories(
     ${COMMON_SOURCE_DIR}/base64
     ${COMMON_SOURCE_DIR}/enclave
     ${COMMON_SOURCE_DIR}/json
+    ${NANOPB_PATH}
     ${SGX_SDK}/include
     ${SGX_SDK}/include/tlibc
     ${SGX_SDK}/include/libcxx

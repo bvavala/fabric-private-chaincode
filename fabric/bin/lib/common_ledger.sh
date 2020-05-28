@@ -43,6 +43,8 @@ define_common_vars() {
     ORDERER_CMD="env FABRIC_CFG_PATH=${FABRIC_CFG_PATH} ${FABRIC_SCRIPTDIR}/orderer.sh"
     CONFIGTXGEN_CMD="env FABRIC_CFG_PATH=${FABRIC_CFG_PATH} ${FABRIC_SCRIPTDIR}/configtxgen.sh"
 
+    ENCLAVE_MANAGER_CMD="${FABRIC_SCRIPTDIR}/enclave_manager.sh"
+
     # NOTE: following variables can be overriden by defining them _before_ sourcing common_ledger.sh ..
     : ${ORDERER_ADDR:="localhost:7050"}
     : ${CHAN_ID:="mychannel"}

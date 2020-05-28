@@ -42,9 +42,17 @@ int ctl_invoke(uint8_t* response,
     {
         LOG_DEBUG("ctl_create");
 
-        COND2ERR(!g_cc_data.generate(ctx));
+        // NOTE:
+        // cc_data is a global pointer, meant to reference a global variable of cc_data type.
+        // If g_cc_data is implemented as a simple global variable, cgo seems to crash (on enclave destroy).
+        // This seems due to constructor/destructor issues -- if the variable is declared in a function, it works.
+        // For this reason, we allocate it here dynamically.
+        // TODO: free this memory when necessary.
+        g_cc_data = new cc_data;
+
+        COND2ERR(!g_cc_data->generate(ctx));
         LOG_DEBUG("ccdata generate passed");
-        COND2ERR(!g_cc_data.to_public_proto(params[0], response, max_response_len, (size_t*)actual_response_len));
+        COND2ERR(!g_cc_data->to_public_proto(params[0], response, max_response_len, (size_t*)actual_response_len));
         return 0;
 
 
@@ -89,7 +97,7 @@ int ctl_invoke(uint8_t* response,
         uint8_t quote[2048];
         uint32_t quote_size = 0;
         ocall_get_quote((uint8_t*)&spid, (uint32_t)sizeof(spid_t), (uint8_t*)&report, (uint32_t)sizeof(sgx_report_t), (uint8_t*)&quote, 2048, &quote_size);
-        LOG_DEBUG("recevied quote size %u", quote_size);
+        LOG_DEBUG("received quote size %u", quote_size);
         std::string b64quote = base64_encode((const unsigned char*)quote, quote_size);
         *actual_response_len = b64quote.length();
         LOG_DEBUG("b64 quote: %s", b64quote.c_str());

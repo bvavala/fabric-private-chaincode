@@ -12,12 +12,12 @@
 typedef enum
 {
     KT_NO_KEY,
-    KT_PUBLIC_ENCRYPTION_KEY,
-    KT_PRIVATE_ENCRYPTION_KEY,
-    KT_PUBLIC_SIGNING_KEY,
-    KT_PRIVATE_SIGNING_KEY,
-    KT_SGX_RSA_PUBLIC,
-    KT_SGX_RSA_PRIVATE
+    KT_ENCRYPTION,
+    KT_DECRYPTION,
+    KT_SIGNATURE,
+    KT_VERIFICATION,
+    KT_CC_ENCRYPTION,
+    KT_CC_DECRYPTION
 } key_type_e;
 
 class key_ring
@@ -32,7 +32,7 @@ class key_ring
 
     public:
         bool generate();
-        const void* key_pointer(key_type_e key_type, size_t* p_size) const;
-        bool to_b64(key_type_e kt, std::string& b64) const;
+        bool serialize(key_type_e kt, std::string& serialized_key) const;
+        bool to_public_proto(uint8_t* buf, size_t buf_size, size_t* out_size) const;
 };
 

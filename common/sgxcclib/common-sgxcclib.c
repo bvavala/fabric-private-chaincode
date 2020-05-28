@@ -82,6 +82,7 @@ int sgxcc_create_enclave(sgx_enclave_id_t* eid, const char* enclave_file)
 
 int sgxcc_destroy_enclave(enclave_id_t eid)
 {
+    LOG_DEBUG("sgxcc_destroy enclave");
     int ret = sgx_destroy_enclave((sgx_enclave_id_t)eid);
     CHECK_SGX_ERROR_AND_RETURN_ON_ERROR(ret)
     return SGX_SUCCESS;

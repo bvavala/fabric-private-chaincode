@@ -4,6 +4,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+set -x
+
 SCRIPTDIR="$(dirname $(readlink --canonicalize ${BASH_SOURCE}))"
 FPC_TOP_DIR="${SCRIPTDIR}/.."
 FABRIC_SCRIPTDIR="${FPC_TOP_DIR}/fabric/bin/"
@@ -19,8 +21,13 @@ CC_LANG=fpc-c
 CC_VER="$(cat ${CC_PATH}/mrenclave)"
 CC_EP="OR('SampleOrg.member')" # note that we use .member as NodeOUs is disabled with the crypto material used in the integration tests.
 
-num_rounds=10
+num_rounds=1
 FAILURES=0
+
+IAS_CREDENTIAL_PATH=${FPC_PATH}/integration/config/ias
+SPID="`cat $IAS_CREDENTIAL_PATH/spid.txt`"
+echo SPID=$SPID
+sleep 3
 
 echo_test() {
     PKG=/tmp/${CC_ID}.tar.gz
@@ -51,9 +58,23 @@ echo_test() {
     say "do echos"
     for (( i=1; i<=$num_rounds; i++ ))
     do
-        # echos
-        try_r ${PEER_CMD} chaincode invoke -o ${ORDERER_ADDR} -C ${CHAN_ID} -n ${CC_ID} -c '{"Args": ["echo-'$i'"]}' --waitForEvent
-        check_result "echo-$i"
+        ## echos
+        #try_r ${PEER_CMD} chaincode invoke -o ${ORDERER_ADDR} -C ${CHAN_ID} -n ${CC_ID} -c '{"Args": ["echo-'$i'"]}' --waitForEvent
+        #check_result "echo-$i"
+
+        echo "INVOKING CTL_CREATE"
+        try_r ${PEER_CMD} chaincode invoke -o ${ORDERER_ADDR} -C ${CHAN_ID} -n ${CC_ID} -c '{"Args": ["ctl_create", "'$SPID'"]}'
+        echo "ctl_create: $RESPONSE"
+        CI_RESPONSE=${RESPONSE}
+        CI_RESPONSE=${CI_RESPONSE##*ResponseData\\\":\\\"}
+        CI_RESPONSE=${CI_RESPONSE%%\\*}
+        # Convert and de-encrypt it
+        CREDENTIALS=$(${ENCLAVE_MANAGER_CMD} "`echo ${CI_RESPONSE} | base64 -d | base64 --wrap=0`")
+        echo creds=$CREDENTIALS
+        echo $CREDENTIALS | base64 -d --wrap=0
+
+        echo "INVOKING ERCC NEW ENCLAVE"
+        #try ${PEER_CMD} chaincode invoke -o ${ORDERER_ADDR} -C ${CHAN_ID} -n ${ERCC_ID} -c '{"args":["newEnclave", "'$CREDENTIALS'"]}'
      done
 }
 

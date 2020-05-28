@@ -15,8 +15,9 @@ set(SOURCE_FILES
     ctl.cpp
     ${COMMON_SOURCE_DIR}/enclave/common.cpp
     ${COMMON_SOURCE_DIR}/enclave/cc_data.cpp
+    ${COMMON_SOURCE_DIR}/enclave/cc_parameters.cpp
     ${COMMON_SOURCE_DIR}/enclave/key_ring.cpp
-    ${COMMON_SOURCE_DIR}/enclave/report_data.cpp
+    ${COMMON_SOURCE_DIR}/enclave/attestation.cpp
     ${COMMON_SOURCE_DIR}/base64/base64.cpp
     ${COMMON_SOURCE_DIR}/utils.c
     ${COMMON_SOURCE_DIR}/json/parson.c

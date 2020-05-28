@@ -7,7 +7,8 @@
 #include "error.h"
 #include "logging.h"
 #include "base64.h"
-#include "c11_support.h"
+#include <pb_encode.h>
+#include "protos/credentials.pb.h"
 
 bool key_ring::generate()
 {
@@ -32,42 +33,88 @@ bool key_ring::generate()
             return false;
         }
     }
-    LOG_DEBUG("keyring generate success");
+    LOG_DEBUG("key-ring generate success");
     return true;
 
 err:
     return false;
 }
 
-const void* key_ring::key_pointer(key_type_e kt, size_t* size) const
+bool key_ring::serialize(key_type_e kt, std::string& serialized_key) const
 {
-    switch(kt)
+    try
     {
-        case KT_SGX_RSA_PUBLIC:
-            {
-                *size = sizeof(encryption_key_);
-                return (const void*)&encryption_key_;
-            }
-        case KT_SGX_RSA_PRIVATE:
-            {
-                *size = sizeof(decryption_key_);
-                return (const void*)&decryption_key_;
-            }
-        default:
-            break;
+        switch(kt)
+        {
+            case KT_ENCRYPTION:
+                {
+                    serialized_key = encryption_key_.Serialize();
+                    break;
+                }
+            case KT_DECRYPTION:
+                {
+                    serialized_key = decryption_key_.Serialize();
+                    break;
+                }
+            case KT_SIGNATURE:
+                {
+                    serialized_key = signature_key_.Serialize();
+                    break;
+                }
+            case KT_VERIFICATION:
+                {
+                    serialized_key = verification_key_.Serialize();
+                    break;
+                }
+            case KT_CC_ENCRYPTION:
+                {
+                    serialized_key = cc_encryption_key_.Serialize();
+                    break;
+                }
+            case KT_CC_DECRYPTION:
+                {
+                    serialized_key = cc_decryption_key_.Serialize();
+                    break;
+                }
+            default:
+                {
+                    LOG_ERROR("bad key type %d", kt);
+                    return false;
+
+                }
+        }
     }
-    return NULL;
+    catch(...)
+    {
+        LOG_ERROR("error serializing key type %d", kt);
+        return false;
+    }
+
+    return true;
 }
 
-bool key_ring::to_b64(key_type_e kt, std::string& b64) const
+bool key_ring::to_public_proto(uint8_t* buf, size_t buf_size, size_t* out_size) const
 {
-    size_t size;
-    const void *p = key_pointer(kt, &size);
-    COND2ERR(p == NULL);
-    b64 = base64_encode((const unsigned char*)p, size);
+    pb_ostream_t ostream = pb_ostream_from_buffer(buf, buf_size);
+    {
+        // verification key
+        std::string s;
+        COND2ERR(!serialize(KT_VERIFICATION, s));
+        COND2ERR(!pb_encode_tag(&ostream, PB_WT_STRING, enclavePublicKeys_enclaveVerifyingKey_tag));
+        COND2ERR(!pb_encode_string(&ostream, (const unsigned char*)s.c_str(), s.length()+1));
+    }
+    {
+        // encryption key
+        std::string s;
+        COND2ERR(!serialize(KT_ENCRYPTION, s));
+        COND2ERR(!pb_encode_tag(&ostream, PB_WT_STRING, enclavePublicKeys_enclaveEncryptionKey_tag));
+        COND2ERR(!pb_encode_string(&ostream, (const unsigned char*)s.c_str(), s.length()+1));
+    }
+
+    *out_size = ostream.bytes_written;
+    LOG_DEBUG("key ring public proto size %d", *out_size);
     return true;
 
 err:
     return false;
 }
-

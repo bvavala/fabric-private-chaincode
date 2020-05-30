@@ -10,7 +10,7 @@ require (
 	github.com/fsouza/go-dockerclient v1.6.5 // indirect
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-gonic/gin v1.6.1
-	github.com/golang/protobuf v1.3.5
+	github.com/golang/protobuf v1.4.1
 	github.com/hashicorp/go-version v1.2.0 // indirect
 	github.com/hyperledger-labs/fabric-private-chaincode/ercc v0.0.0-20200323171133-70f103dd66ee
 	github.com/hyperledger/fabric v2.1.1+incompatible
@@ -32,6 +32,7 @@ require (
 	github.com/willf/bitset v1.1.10 // indirect
 	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a
 	golang.org/x/tools v0.0.0-20200323164354-18ea2c8f7359
+	google.golang.org/protobuf v1.24.0 // indirect
 	gopkg.in/ini.v1 v1.55.0 // indirect
 )
 

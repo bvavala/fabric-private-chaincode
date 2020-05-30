@@ -37,6 +37,7 @@ linter: gotools build
 gotools:
 	# install goimports if not present
 	$(GO) install golang.org/x/tools/cmd/goimports
+	$(GO) install google.golang.org/protobuf/cmd/protoc-gen-go
 
 godeps: gotools
 	$(GO) mod download

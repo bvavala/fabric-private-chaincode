@@ -233,7 +233,7 @@ int ecall_cc_invoke(const char* encoded_args,
     ctx.encoded_args = encoded_args;
 
     ctx.json_args = ctx.encoded_args;
-    if(is_ctl_invoke(&ctx))
+    if (is_ctl_invoke(&ctx))
     {
         LOG_DEBUG("ctl invoke");
         ret = ctl_invoke(response, response_len_in, response_len_out, &ctx);

@@ -6,11 +6,11 @@
 
 #include "enclave_t.h"
 
+#include "crypto.h"
 #include "logging.h"
 #include "shim.h"
+#include "shim_data.h"
 #include "shim_internals.h"
-
-#include "crypto.h"
 
 #include "base64.h"
 #include "parson.h"
@@ -40,13 +40,13 @@ void get_creator_name(
 void get_channel_id(char* channel_id, uint32_t max_channel_id_len, shim_ctx_ptr_t ctx)
 {
     memset(channel_id, 0, max_channel_id_len);
-    internal_get_channel_id(channel_id, max_channel_id_len, ctx);
+    shim_data_get_channel_id(channel_id, max_channel_id_len);
 }
 
 void get_msp_id(char* msp_id, uint32_t max_msp_id_len, shim_ctx_ptr_t ctx)
 {
     memset(msp_id, 0, max_msp_id_len);
-    internal_get_msp_id(msp_id, max_msp_id_len, ctx);
+    shim_data_get_msp_id(msp_id, max_msp_id_len);
 }
 
 void get_state(

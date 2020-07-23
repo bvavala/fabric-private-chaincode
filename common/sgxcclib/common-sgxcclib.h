@@ -29,6 +29,11 @@ int sgxcc_get_remote_attestation_report(enclave_id_t eid,
     uint32_t sig_rl_size);
 int sgxcc_get_pk(enclave_id_t eid, ec256_public_t* pubkey);
 int sgxcc_get_egid(unsigned int* p_egid);
+int sgxcc_init_data(enclave_id_t eid,
+    const char* channel_id,
+    uint32_t channel_id_length,
+    const char* msp_id,
+    uint32_t msp_id_length);
 
 #define CHECK_SGX_ERROR_AND_RETURN_ON_ERROR(sgx_status_ret)                                        \
     if (sgx_status_ret != SGX_SUCCESS)                                                             \

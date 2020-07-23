@@ -15,6 +15,8 @@
 
 #include "sgx_utils.h"
 
+#include "shim_data.h"
+
 // enclave sk and pk (both are little endian) used for out signatures
 sgx_ec256_private_t enclave_sk = {0};
 sgx_ec256_public_t enclave_pk = {0};
@@ -95,5 +97,28 @@ int ecall_get_pk(uint8_t* pubkey)
     memcpy(pubkey, &enclave_pk_be, sizeof(sgx_ec256_public_t));
 
     LOG_DEBUG("Enc: Return enclave pk as Big Endian");
+    return SGX_SUCCESS;
+}
+
+int ecall_init_data(const char* channel_id, const char* msp_id)
+{
+    // the SGX SDK guarantees that the strings are null terminated
+
+    bool b;
+
+    b = shim_data_set_channel_id(channel_id, (uint32_t)strlen(channel_id));
+    if (!b)
+    {
+        LOG_ERROR("unable to set channel id");
+        return SGX_ERROR_UNEXPECTED;
+    }
+
+    b = shim_data_set_msp_id(msp_id, (uint32_t)strlen(msp_id));
+    if (!b)
+    {
+        LOG_ERROR("unable to set msp id");
+        return SGX_ERROR_UNEXPECTED;
+    }
+
     return SGX_SUCCESS;
 }

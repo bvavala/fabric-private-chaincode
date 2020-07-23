@@ -102,6 +102,12 @@ func (t *EnclaveChaincode) setup(stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Error(errMsg)
 	}
 
+	if err := t.enclave.InitData(stub); err != nil {
+		errMsg := fmt.Sprintf("t.enclave.InitData  failed: %s", err)
+		logger.Errorf(errMsg)
+		return shim.Error(errMsg)
+	}
+
 	// write mrenclave to ledger
 	mrenclave, err := t.enclave.MrEnclave()
 	if err != nil {

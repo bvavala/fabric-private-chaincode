@@ -184,3 +184,17 @@ int sgxcc_get_egid(unsigned int* p_egid)
     CHECK_SGX_ERROR_AND_RETURN_ON_ERROR(ret)
     return SGX_SUCCESS;
 }
+
+int sgxcc_init_data(enclave_id_t eid,
+    const char* channel_id,
+    uint32_t channel_id_length,
+    const char* msp_id,
+    uint32_t msp_id_length)
+{
+    int enclave_ret = SGX_ERROR_UNEXPECTED;
+    int ret = ecall_init_data(eid, &enclave_ret, channel_id, msp_id);
+    CHECK_SGX_ERROR_AND_RETURN_ON_ERROR(ret)
+    CHECK_SGX_ERROR_AND_RETURN_ON_ERROR(enclave_ret)
+    return SGX_SUCCESS;
+    return SGX_SUCCESS;
+}

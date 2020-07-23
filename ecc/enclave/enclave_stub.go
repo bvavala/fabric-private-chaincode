@@ -318,6 +318,8 @@ type Stub interface {
 	Destroy() error
 	// Returns expected MRENCLAVE
 	MrEnclave() (string, error)
+	// Initializes data
+	InitData(shimStub shim.ChaincodeStubInterface) error
 }
 
 // StubImpl implements the interface
@@ -551,4 +553,27 @@ func (e *StubImpl) MrEnclave() (string, error) {
 	}
 
 	return mrenclave, nil
+}
+
+func (e *StubImpl) InitData(shimStub shim.ChaincodeStubInterface) error {
+	channelIdStr := shimStub.GetChannelID()
+	mspIdStr, err := shim.GetMSPID()
+	if err != nil {
+		return fmt.Errorf("error getting MSPID")
+	}
+
+	cChannelIdStr := C.CString(channelIdStr)
+	defer C.free(unsafe.Pointer(cChannelIdStr))
+
+	cMspIdStr := C.CString(mspIdStr)
+	defer C.free(unsafe.Pointer(cMspIdStr))
+
+	e.sem.Acquire(context.Background(), 1)
+	ret := C.sgxcc_init_data(e.eid, cChannelIdStr, C.uint32_t(len(channelIdStr)), cMspIdStr, C.uint32_t(len(mspIdStr)))
+	e.sem.Release(1)
+	if ret != 0 {
+		return fmt.Errorf("C.sgxcc_init_data failed. Reason: %d", int(ret))
+	}
+
+	return nil
 }

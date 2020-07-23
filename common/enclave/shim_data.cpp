@@ -4,10 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "shim_internals.h"
-#include "enclave_t.h"  // for ocalls
-#include "logging.h"    // for LOG_*
-
+#include "shim_data.h"
+#include <string>
+#include "logging.h"
 /******************************************************************************
  * The channel id is set once, and then maintained fixed for consistency.
  * The value is meant to be either provided by the Fabric shim on enclave
@@ -20,7 +19,7 @@ static char g_channel_id[MAX_CHANNEL_ID_LENGTH];
 static uint32_t g_channel_id_length;
 static bool g_channel_id_set = false;
 
-bool internal_set_channel_id(char* channel_id, uint32_t channel_id_length)
+bool shim_data_set_channel_id(const char* channel_id, uint32_t channel_id_length)
 {
     if (g_channel_id_set)
     {
@@ -41,25 +40,15 @@ bool internal_set_channel_id(char* channel_id, uint32_t channel_id_length)
     return true;
 }
 
-bool internal_get_channel_id(char* channel_id, uint32_t max_channel_id_len, shim_ctx_ptr_t ctx)
+bool shim_data_get_channel_id(char* channel_id, uint32_t max_channel_id_length)
 {
     if (!g_channel_id_set)
     {
-        // get channel id
-        char local_channel_id[MAX_CHANNEL_ID_LENGTH];
-        ocall_get_channel_id(local_channel_id, MAX_CHANNEL_ID_LENGTH, ctx->u_shim_ctx);
-        // make sure string is null terminated
-        local_channel_id[MAX_CHANNEL_ID_LENGTH - 1] = '\0';
-        // set internal channel id
-        if (!internal_set_channel_id(local_channel_id, strlen(local_channel_id)))
-        {
-            return false;
-        }
+        LOG_ERROR("channel id not set");
+        return false;
     }
 
-    // channel id is set
-
-    if (max_channel_id_len < g_channel_id_length + 1)
+    if (max_channel_id_length < g_channel_id_length + 1)
     {
         LOG_ERROR("input channel id buffer length is insufficient");
         return false;
@@ -82,7 +71,7 @@ static char g_msp_id[MAX_MSP_ID_LENGTH];
 static uint32_t g_msp_id_length;
 static bool g_msp_id_set = false;
 
-bool internal_set_msp_id(char* msp_id, uint32_t msp_id_length)
+bool shim_data_set_msp_id(const char* msp_id, uint32_t msp_id_length)
 {
     if (g_msp_id_set)
     {
@@ -103,25 +92,15 @@ bool internal_set_msp_id(char* msp_id, uint32_t msp_id_length)
     return true;
 }
 
-bool internal_get_msp_id(char* msp_id, uint32_t max_msp_id_len, shim_ctx_ptr_t ctx)
+bool shim_data_get_msp_id(char* msp_id, uint32_t max_msp_id_length)
 {
     if (!g_msp_id_set)
     {
-        // get msp id
-        char local_msp_id[MAX_CHANNEL_ID_LENGTH];
-        ocall_get_msp_id(local_msp_id, MAX_CHANNEL_ID_LENGTH, ctx->u_shim_ctx);
-        // make sure string is null terminated
-        local_msp_id[MAX_CHANNEL_ID_LENGTH - 1] = '\0';
-        // set internal msp id
-        if (!internal_set_msp_id(local_msp_id, strlen(local_msp_id)))
-        {
-            return false;
-        }
+        LOG_ERROR("channel id not set");
+        return false;
     }
 
-    // msp id is set
-
-    if (max_msp_id_len < g_msp_id_length + 1)
+    if (max_msp_id_length < g_msp_id_length + 1)
     {
         LOG_ERROR("input msp id buffer length is insufficient");
         return false;

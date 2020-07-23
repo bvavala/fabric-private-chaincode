@@ -1,4 +1,5 @@
 /*
+ * Copyright 2020 Intel Corporation
  * Copyright IBM Corp. All Rights Reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -17,6 +18,10 @@ enclave {
                 [out, size=64] uint8_t *pubkey);
 
         public int ecall_get_pk([out, size=64] uint8_t *pubkey);
+
+        public int ecall_init_data(
+                [in, string] const char* channel_id,
+                [in, string] const char* msp_id);
     };
 
     untrusted {

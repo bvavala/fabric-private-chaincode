@@ -9,6 +9,7 @@ set(SOURCE_FILES
     sgxcclib.c
     enclave_u.c
     ${COMMON_SOURCE_DIR}/sgxcclib/common-sgxcclib.c
+    ${COMMON_SOURCE_DIR}/sgxcclib/attestation-ocalls.c
     )
 
 set(cleanup_files

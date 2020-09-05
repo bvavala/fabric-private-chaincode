@@ -1,0 +1,5 @@
+# Copyright 2020 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+set(T_PDO_CRYPTO_LIB_NAME tpdo-crypto)

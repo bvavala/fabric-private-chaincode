@@ -129,6 +129,7 @@ bool test()
         (uint8_t*)wrong_expected_code_id.c_str(), wrong_expected_code_id.length());
     COND2ERR(b);
 
+    LOG_INFO("Test Successful\n");
     return true;
 
 err:

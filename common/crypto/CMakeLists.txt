@@ -13,7 +13,7 @@ SET(PDO_CRYPTO_TEST_DIR "${PDO_CRYPTO_DIR}/../tests/crypto")
 
 FILE(GLOB PROJECT_HEADERS
     "${PDO_CRYPTO_DIR}/../*.h"
-    "evidence/*.h"
+    "attestation-api/evidence/*.h"
     )
 FILE(GLOB PROJECT_SOURCES
     "${PDO_CRYPTO_DIR}/../c11_support.cpp"
@@ -22,7 +22,7 @@ FILE(GLOB PROJECT_SOURCES
     "pdo-types.cpp"
     "$ENV{FPC_PATH}/common/base64/base64.cpp"
     "$ENV{FPC_PATH}/common/json/parson.c"
-    "evidence/*.cpp"
+    "attestation-api/evidence/*.cpp"
     )
 
 #set debug flags for PDO based on FPC flags
@@ -89,4 +89,4 @@ ADD_SUBDIRECTORY (${PDO_CRYPTO_TEST_DIR})
 ###################################################################################################
 # Local Tests
 ###################################################################################################
-ADD_SUBDIRECTORY (test)
+ADD_SUBDIRECTORY (attestation-api/test)

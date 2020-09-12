@@ -7,8 +7,11 @@
 
 function b64quote_to_iasresponse() {
     QUOTE=$1
-    #contact IAS to get the verification report
+    # contact IAS to get the verification report
     IAS_RESPONSE=$(curl -s -H "Content-Type: application/json" -H "Ocp-Apim-Subscription-Key:$API_KEY" -X POST -d '{"isvEnclaveQuote":"'$QUOTE'"}' https://api.trustedservices.intel.com/sgx/dev/attestation/v4/report -i)
+    # check status (as there may be multiple header, we rather check presence of relevant fields)
+    echo "$IAS_RESPONSE" | grep "X-IASReport-Signature"           >/dev/null || die "IAS Response error"
+    echo "$IAS_RESPONSE" | grep "X-IASReport-Signing-Certificate" >/dev/null || die "IAS Response error"
 }
 
 function iasresponse_to_evidence() {

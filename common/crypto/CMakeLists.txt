@@ -25,6 +25,10 @@ FILE(GLOB PROJECT_SOURCES
     "attestation-api/evidence/*.cpp"
     )
 
+FILE(GLOB PROJECT_OCALLS
+    "attestation-api/ocalls/*.c"
+    )
+
 #set debug flags for PDO based on FPC flags
 #(COMMON_CXX_FLAGS is inherited, and used, by the pdo crypto tests)
 if("$ENV{PDO_DEBUG_BUILD}" STREQUAL "1")
@@ -38,7 +42,7 @@ endif()
 # Untrusted crypto adapt library
 ###################################################################################################
 PROJECT(${U_CRYPTO_ADAPT_LIB_NAME} CXX C)
-ADD_LIBRARY(${U_CRYPTO_ADAPT_LIB_NAME} STATIC ${PROJECT_HEADERS} ${PROJECT_SOURCES})
+ADD_LIBRARY(${U_CRYPTO_ADAPT_LIB_NAME} STATIC ${PROJECT_HEADERS} ${PROJECT_SOURCES} ${PROJECT_OCALLS})
 TARGET_INCLUDE_DIRECTORIES(${U_CRYPTO_ADAPT_LIB_NAME} PRIVATE "$ENV{FPC_PATH}/common")
 TARGET_INCLUDE_DIRECTORIES(${U_CRYPTO_ADAPT_LIB_NAME} PRIVATE "${PDO_CRYPTO_DIR}/..")
 TARGET_INCLUDE_DIRECTORIES(${U_CRYPTO_ADAPT_LIB_NAME} PRIVATE "${PDO_CRYPTO_DIR}")

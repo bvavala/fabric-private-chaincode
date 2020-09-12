@@ -5,11 +5,10 @@
  */
 
 #include <sgx_uae_epid.h>
-#include "common-sgxcclib.h"
 #include "error.h"
 #include "fpc-types.h"
 #include "logging.h"
-#include "sgx_attestation_type.h"
+#include "sgx_quote.h"
 
 void ocall_init_quote(uint8_t* target, uint32_t target_len, uint8_t* egid, uint32_t egid_len)
 {
@@ -37,7 +36,7 @@ void ocall_get_quote(uint8_t* spid,
     COND2LOGERR(ret != SGX_SUCCESS, "cannot get quote size");
     COND2LOGERR(required_quote_size > max_quote_len, "not enough buffer for quote");
 
-    ret = sgx_get_quote((const sgx_report_t*)report, sign_type,
+    ret = sgx_get_quote((const sgx_report_t*)report, (sgx_quote_sign_type_t)sign_type,
         (const sgx_spid_t*)spid,  // spid
         NULL,                     // nonce
         sig_rl,                   // sig_rl

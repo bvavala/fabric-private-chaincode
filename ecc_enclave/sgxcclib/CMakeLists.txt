@@ -9,7 +9,6 @@ set(SOURCE_FILES
     sgxcclib.c
     enclave_u.c
     ${COMMON_SOURCE_DIR}/sgxcclib/common-sgxcclib.c
-    ${COMMON_SOURCE_DIR}/sgxcclib/attestation-ocalls.c
     )
 
 set(cleanup_files
@@ -44,7 +43,15 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${SGX_COMMON_CFLAGS} -fPIC -Wall -Wno-attrib
 set_target_properties(libsgxcc PROPERTIES PREFIX "")
 
 target_link_libraries(libsgxcc
-    -L${SGX_LIBRARY_PATH} -l${SGX_URTS_LIB} -l${SGX_LNCH_LIB} -l${SGX_EPID_LIB} -L${SGX_SSL_LIBRARY_PATH} -lsgx_usgxssl)
+    -L${SGX_LIBRARY_PATH}
+    -l${SGX_URTS_LIB}
+    -l${SGX_LNCH_LIB}
+    -l${SGX_EPID_LIB}
+    -L${SGX_SSL_LIBRARY_PATH}
+    -lsgx_usgxssl
+    # adding crypto adapt because enclave_u uses ocalls which are built into crypto adapt
+    -L${COMMON_SOURCE_DIR}/crypto/_build -l${U_CRYPTO_ADAPT_LIB_NAME}
+    )
 
 add_custom_command(TARGET libsgxcc
     POST_BUILD

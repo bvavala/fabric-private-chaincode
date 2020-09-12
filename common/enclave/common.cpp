@@ -15,7 +15,7 @@
 
 #include "sgx_utils.h"
 
-#include "attestation.h"
+#include "attestation-api/attestation/attestation.h"
 #include "error.h"
 
 // enclave sk and pk (both are little endian) used for out signatures

@@ -11,7 +11,6 @@ set(SOURCE_FILES
     enclave_t.c
     shim.cpp
     ${COMMON_SOURCE_DIR}/enclave/common.cpp
-    ${COMMON_SOURCE_DIR}/enclave/attestation.cpp
     ${COMMON_SOURCE_DIR}/base64/base64.cpp
     ${COMMON_SOURCE_DIR}/utils.c
     ${COMMON_SOURCE_DIR}/json/parson.c

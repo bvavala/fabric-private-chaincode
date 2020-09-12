@@ -13,7 +13,6 @@ set(SOURCE_FILES
 
 set(COMMON_SOURCE_FILES
     ${COMMON_SOURCE_DIR}/enclave/common.cpp
-    ${COMMON_SOURCE_DIR}/enclave/attestation.cpp
     ${COMMON_SOURCE_DIR}/base64/base64.cpp
     ${COMMON_SOURCE_DIR}/json/parson.c
     ${COMMON_SOURCE_DIR}/utils.c
@@ -99,7 +98,7 @@ set_target_properties(enclave PROPERTIES PREFIX "")
 
 target_link_libraries(enclave "${SGX_COMMON_CFLAGS} -Wl,--no-undefined -nostdlib -nodefaultlibs -nostartfiles \
 -L${COMMON_SOURCE_DIR}/crypto/_build \
--Wl,--start-group -l${T_PDO_CRYPTO_LIB_NAME} -Wl,--end-group \
+-Wl,--start-group -l${T_CRYPTO_LIB_NAME} -l${T_CRYPTO_ADAPT_LIB_NAME} -Wl,--end-group \
 -L${SGX_SSL_LIBRARY_PATH} \
 -Wl,--whole-archive -lsgx_tsgxssl -Wl,--no-whole-archive -lsgx_tsgxssl_crypto \
 -L${SGX_LIBRARY_PATH} \

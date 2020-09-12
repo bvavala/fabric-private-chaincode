@@ -22,6 +22,7 @@ add_custom_command(
     COMMAND ${SGX_EDGER8R} --untrusted enclave.edl
     --search-path ../enclave/ # enclave.edl
     --search-path ${COMMON_SOURCE_DIR}/enclave
+    --search-path ${COMMON_SOURCE_DIR}/crypto
     --search-path ${SGX_SDK}/include
     --search-path ${SGX_SSL}/include
     COMMENT "Generating enclave_u.{c,h}"

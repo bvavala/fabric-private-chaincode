@@ -5,7 +5,6 @@
  */
 
 enclave {
-    from "attestation.edl" import *;
     include "sgx_trts.h"
     include "sgx_tcrypto.h"
 

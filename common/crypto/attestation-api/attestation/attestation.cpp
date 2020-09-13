@@ -6,14 +6,15 @@
 
 #include <string>
 #include "base64.h"
-//#include "enclave_t.h"
 #include "error.h"
 #include "logging.h"
 #include "parson.h"
 #include "pdo/common/crypto/crypto.h"
+#include "pdo/common/jsonvalue.h"
 #include "sgx_quote.h"
 #include "sgx_utils.h"
 #include "types.h"
+#include "attestation.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,17 +49,18 @@ attestation_state_t g_attestation_state = {0};
 
 bool init_attestation(uint8_t* params, uint32_t params_length)
 {
+    //open json
     std::string params_string((char*)params, params_length);
-    JSON_Value* root = json_parse_string(params_string.c_str());
+    JsonValue root(json_parse_string(params_string.c_str()));
     COND2LOGERR(root == NULL, "cannot parse attestation params");
 
     {  // set attestation type
         const char* p;
-        p = json_object_get_string(json_object(root), "attestation_type");
+        p = json_object_get_string(json_object(root), ATTESTATION_TYPE_TAG);
         COND2LOGERR(p == NULL, "no attestation type provided");
         g_attestation_state.attestation_type.assign(p, p + strlen(p));
 
-        if (g_attestation_state.attestation_type.compare("simulated") == 0)
+        if (g_attestation_state.attestation_type.compare(SIMULATED_TYPE_TAG) == 0)
         {
             // terminate init successfully
             goto init_success;
@@ -66,10 +68,10 @@ bool init_attestation(uint8_t* params, uint32_t params_length)
 
         // check other types
         g_attestation_state.sign_type = -1;
-        if (g_attestation_state.attestation_type.compare("epid-linkable") == 0)
+        if (g_attestation_state.attestation_type.compare(EPID_LINKABLE_TYPE_TAG) == 0)
             g_attestation_state.sign_type = SGX_LINKABLE_SIGNATURE;
 
-        if (g_attestation_state.attestation_type.compare("epid-unlinkable") == 0)
+        if (g_attestation_state.attestation_type.compare(EPID_UNLINKABLE_TYPE_TAG) == 0)
             g_attestation_state.sign_type = SGX_UNLINKABLE_SIGNATURE;
 
         COND2LOGERR(g_attestation_state.sign_type == -1, "wrong attestation type");
@@ -78,7 +80,7 @@ bool init_attestation(uint8_t* params, uint32_t params_length)
     {  // set SPID
         std::string hex_spid;
         const char* p;
-        p = json_object_get_string(json_object(root), "hex_spid");
+        p = json_object_get_string(json_object(root), SPID_TAG);
         COND2LOGERR(p == NULL, "no spid provided");
 
         hex_spid.assign(p);
@@ -94,7 +96,7 @@ bool init_attestation(uint8_t* params, uint32_t params_length)
 
     {  // set sig_rl
         const char* p;
-        p = json_object_get_string(json_object(root), "sig_rl");
+        p = json_object_get_string(json_object(root), SIG_RL_TAG);
         COND2LOGERR(p == NULL, "no sig_rl provided");
         g_attestation_state.sig_rl.assign(p, p + strlen(p));
     }
@@ -124,10 +126,10 @@ bool get_attestation(uint8_t* statement,
     COND2ERR(attestation == NULL);
     COND2ERR(attestation_length == NULL || attestation_max_length == 0);
 
-    if (g_attestation_state.attestation_type.compare("simulated") == 0)
+    if (g_attestation_state.attestation_type.compare(SIMULATED_TYPE_TAG) == 0)
     {
-        attestation[0] = '0';
-        *attestation_length = 1;
+        std::string zero("0");
+        b64attestation = base64_encode((const unsigned char*)zero.c_str(), zero.length());
     }
     else
     {
@@ -157,6 +159,24 @@ bool get_attestation(uint8_t* statement,
         memcpy(attestation, b64attestation.c_str(), b64attestation.length());
         *attestation_length = b64attestation.length();
     }
+
+    {
+        //package the output
+        size_t serialization_size = 0;
+        JsonValue root_value(json_value_init_object());
+        JSON_Object* root_object = json_value_get_object(root_value);
+        COND2LOGERR(root_object == NULL, "can't create json");
+
+        COND2LOGERR(JSONFailure == json_object_set_string(root_object, ATTESTATION_TYPE_TAG, g_attestation_state.attestation_type.c_str()), "error serializing attestation type");
+        COND2LOGERR(JSONFailure == json_object_set_string(root_object, ATTESTATION_TAG, b64attestation.c_str()), "error serializing attestation");
+
+        serialization_size = json_serialization_size(root_value);
+        COND2LOGERR(serialization_size > attestation_max_length, "not enough space for b64 conversion");
+
+        COND2LOGERR(JSONFailure == json_serialize_to_buffer(root_value, (char*)attestation, serialization_size), "error packaging attestation");
+        *attestation_length = serialization_size;
+    }
+
     return true;
 err:
     return false;

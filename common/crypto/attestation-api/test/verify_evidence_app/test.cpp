@@ -5,46 +5,14 @@
  */
 
 #include "test.h"
-#include <string.h>
-#include <sys/stat.h>
 #include <string>
-#include "base64.h"
 #include "error.h"
 #include "logging.h"
+#include "test-utils.h"
+#include "test-defines.h"
 
 #include "attestation_tags.h"
 #include "verify-evidence.h"
-
-#define STATEMENT_FILE "statement.txt"
-#define CODE_ID_FILE "code_id.txt"
-#define EVIDENCE_FILE "verify_evidence_input.txt"
-
-bool load_file(const char* filename, char* buffer, uint32_t buffer_length, uint32_t* written_bytes)
-{
-    char* p;
-    uint32_t file_size, bytes_read;
-    struct stat s;
-
-    FILE* fp = fopen(filename, "r");
-    COND2LOGERR(fp == NULL, "can't open file");
-
-    COND2LOGERR(0 > fstat(fileno(fp), &s), "cannot stat file");
-    file_size = s.st_size;
-    COND2LOGERR(file_size > buffer_length, "buffer too small");
-
-    bytes_read = fread(buffer, 1, file_size, fp);
-    COND2LOGERR(bytes_read != file_size, "read bytes don't match file size");
-    *written_bytes = bytes_read;
-
-    fclose(fp);
-    return true;
-
-err:
-    if (fp)
-        fclose(fp);
-
-    return false;
-}
 
 bool test()
 {
@@ -82,18 +50,26 @@ bool test()
 
     // this test succeeds for simulated attestations, and fails for real ones
     // test with wrong statement
+    expected_b = (jsonevidence.find(SIMULATED_TYPE_TAG) == std::string::npos ? false : true);
+    if(expected_b == false)
+    {
+        LOG_INFO("next test expected to fail");
+    }
     b = verify_evidence((uint8_t*)jsonevidence.c_str(), jsonevidence.length(),
         (uint8_t*)wrong_expected_statement.c_str(), wrong_expected_statement.length(),
         (uint8_t*)expected_code_id.c_str(), expected_code_id.length());
-    expected_b = (jsonevidence.find(SIMULATED_TYPE_TAG) == std::string::npos ? false : true);
     COND2LOGERR(b != expected_b, "evidence with bad statement succeeded");
 
     // this test succeeds for simulated attestations, and fails for real ones
     // test with wrong code id
+    expected_b = (jsonevidence.find(SIMULATED_TYPE_TAG) == std::string::npos ? false : true);
+    if(expected_b == false)
+    {
+        LOG_INFO("next test expected to fail");
+    }
     b = verify_evidence((uint8_t*)jsonevidence.c_str(), jsonevidence.length(),
         (uint8_t*)expected_statement.c_str(), expected_statement.length(),
         (uint8_t*)wrong_expected_code_id.c_str(), wrong_expected_code_id.length());
-    expected_b = (jsonevidence.find(SIMULATED_TYPE_TAG) == std::string::npos ? false : true);
     COND2LOGERR(b != expected_b, "evidence with bad code id succeeded");
 
     LOG_INFO("Test Successful\n");

@@ -11,8 +11,16 @@ if [[ -z "${FPC_PATH}" ]]; then
     exit -1
 fi
 
-. ${FPC_PATH}/fabric/bin/lib/common_utils.sh
+CUR_SCRIPT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
+. ${FPC_PATH}/fabric/bin/lib/common_utils.sh
+. ${CUR_SCRIPT_PATH}/define_to_variable.sh
+
+###########################################################
+# b64quote_to_iasresponse
+#   input:  quote as parameter
+#   output: IAS_RESPONSE variable
+###########################################################
 function b64quote_to_iasresponse() {
     #get api key
     API_KEY_FILEPATH="${FPC_PATH}/config/ias/api_key.txt"
@@ -28,6 +36,11 @@ function b64quote_to_iasresponse() {
     echo "$IAS_RESPONSE" | grep "X-IASReport-Signing-Certificate" >/dev/null || die "IAS Response error"
 }
 
+###########################################################
+# iasresponse_to_evidence
+#   input:  ias response as parameter
+#   output: IAS_EVIDENCE variable
+###########################################################
 function iasresponse_to_evidence() {
     IAS_RESPONSE="$1"
     #encode relevant info in json format
@@ -39,14 +52,24 @@ function iasresponse_to_evidence() {
     IAS_EVIDENCE=$JSON_IAS_RESPONSE
 }
 
-
+###########################################################
+# simulated_to_evidence
+#   input:  evidence as parameter
+#   output: SIMULATED_EVIDENCE variable
+###########################################################
 function simulated_to_evidence() {
     SIMULATED_EVIDENCE=$1
 }
 
+###########################################################
+# get_tag_make_variable
+#   input:  tag string (e.g, "TAG_X") as parameter
+#   output: tag string variable (e.g., TAG_X)
+###########################################################
 function get_tag_make_variable() {
     TAGS_PATH="${FPC_PATH}/common/crypto/attestation-api/attestation/attestation_tags.h"
-    printf -v $1 "$(grep "$1" $TAGS_PATH | awk '{print $3}' | sed 's/"//g')"
+    #printf -v $1 "$(grep "$1" $TAGS_PATH | awk '{print $3}' | sed 's/"//g')"
+    define_to_variable "$TAGS_PATH" "$1"
 }
 
 get_tag_make_variable "ATTESTATION_TYPE_TAG"
@@ -56,7 +79,11 @@ get_tag_make_variable "SIMULATED_TYPE_TAG"
 get_tag_make_variable "EPID_LINKABLE_TYPE_TAG"
 get_tag_make_variable "EPID_UNLINKABLE_TYPE_TAG"
 
-
+###########################################################
+# attestation_to_evidence
+#   input:  attestation as parameter
+#   output: EVIDENCE variable
+###########################################################
 function attestation_to_evidence() {
     if [[ -z "$1" ]]; then
         die "no argument provided"
@@ -69,7 +96,6 @@ function attestation_to_evidence() {
 
     case "$ATTESTATION_TYPE" in
         $SIMULATED_TYPE_TAG)
-            echo "simulated"
             simulated_to_evidence "$ATTESTATION"
             EVIDENCE=$SIMULATED_EVIDENCE
             ;;

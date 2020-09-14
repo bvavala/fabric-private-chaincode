@@ -6,10 +6,8 @@
 
 enclave
 {
-
     untrusted
     {
-
         void ocall_init_quote(
             [out, size=target_len] uint8_t *target, uint32_t target_len,
             [out, size=egid_len] uint8_t *egid, uint32_t egid_len);

@@ -90,7 +90,8 @@ bool init_attestation(uint8_t* params, uint32_t params_length)
     // keep initializing EPID attestation with SPID and sig_rl
 
     {  // set SPID
-        std::string hex_spid;
+        //std::string hex_spid;
+        HexEncodedString hex_spid;
         const char* p;
         p = json_object_get_string(json_object(root), SPID_TAG);
         COND2LOGERR(p == NULL, "no spid provided");
@@ -98,11 +99,14 @@ bool init_attestation(uint8_t* params, uint32_t params_length)
         hex_spid.assign(p);
         COND2LOGERR(hex_spid.length() != sizeof(sgx_spid_t) * 2, "wrong spid length");
         // translate hex spid to binary
-        for (unsigned int i = 0; i < hex_spid.length(); i += 2)
+        try
         {
-            std::string byteString = hex_spid.substr(i, 2);
-            long int li_byte = strtol(byteString.c_str(), NULL, 16);
-            g_attestation_state.spid.id[i / 2] = (char)li_byte;
+            ByteArray ba = HexEncodedStringToByteArray(hex_spid);
+            memcpy(g_attestation_state.spid.id, ba.data(), ba.size());
+        }
+        catch(...)
+        {
+            COND2LOGERR(true, "bad hex spid");
         }
     }
 

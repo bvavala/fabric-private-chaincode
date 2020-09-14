@@ -20,7 +20,7 @@ CC_VER="$(cat ${CC_PATH}/mrenclave)"
 CC_SEQ="1"
 CC_EP="OR('SampleOrg.member')" # note that we use .member as NodeOUs is disabled with the crypto material used in the integration tests.
 
-num_rounds=1
+num_rounds=10
 FAILURES=0
 
 echo_test() {

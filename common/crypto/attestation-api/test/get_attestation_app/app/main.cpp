@@ -7,20 +7,12 @@
 #include "sgx_eid.h"
 #include "sgx_error.h"
 #include "sgx_urts.h"
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
+#include <string>
+#include "test-utils.h"
+#include "test-defines.h"
 #include "test_enclave_u.h"
-
 #include "error.h"
 #include "logging.h"
-
-#define ENCLAVE_FILENAME "test_enclave.signed.so"
-#define INIT_DATA_INPUT "init_attestation_input.txt"
-#define GET_ATTESTATION_OUTPUT "get_attestation_output.txt"
-#define STATEMENT "1234567890"
 
 int main()
 {
@@ -28,12 +20,13 @@ int main()
     int updated = 0;
     sgx_enclave_id_t global_eid = 0;
     sgx_status_t ret = SGX_ERROR_UNEXPECTED;
-    uint8_t attestation[4096];
+    const uint32_t buffer_length = 1 << 20;
+    uint8_t attestation[buffer_length];
     uint32_t attestation_length = 0;
+    uint32_t params_length = 0;
     int b;
-    char params[2048];
-    FILE* fpi;
-    FILE* fpo;
+    char params_buf[buffer_length];
+    std::string params;
 
     ret = sgx_create_enclave(ENCLAVE_FILENAME, SGX_DEBUG_FLAG, &token, &updated, &global_eid, NULL);
     if (ret != SGX_SUCCESS)
@@ -42,23 +35,17 @@ int main()
         exit(-1);
     }
 
-    fpi = fopen(INIT_DATA_INPUT, "r+");
-    COND2LOGERR(fpi == NULL, "can't open " INIT_DATA_INPUT "\n");
-    COND2LOGERR(params != fgets(params, 2048, fpi), "error fgets");
-    fclose(fpi);
+    COND2LOGERR(false == load_file(INIT_DATA_INPUT, params_buf, buffer_length, &params_length), "error loading params");
+    params = std::string(params_buf, params_length);
 
-    init_att(global_eid, &b, (uint8_t*)params, strlen(params));
+    init_att(global_eid, &b, (uint8_t*)params.c_str(), params.length());
     COND2LOGERR(!b, "init_attestation failed");
 
     get_att(global_eid, &b, (uint8_t*)STATEMENT, strlen(STATEMENT), attestation, 4096,
         &attestation_length);
     COND2LOGERR(!b, "get_attestation failed");
 
-    fpo = fopen(GET_ATTESTATION_OUTPUT, "w+");
-    COND2LOGERR(fpo == NULL, "can't open " GET_ATTESTATION_OUTPUT "\n");
-    fwrite(attestation, sizeof(uint8_t), attestation_length, fpo);
-    fclose(fpo);
-
+    COND2LOGERR(false == save_file(GET_ATTESTATION_OUTPUT, (char*)attestation, attestation_length), "error saving attestation");
     sgx_destroy_enclave(global_eid);
     return 0;
 

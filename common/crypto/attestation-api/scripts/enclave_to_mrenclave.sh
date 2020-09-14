@@ -6,9 +6,11 @@
 
 set -e
 
-# first input enclave.so file path (IMPORTANT: not the signed one)
-# second input xml configuration file path
-
+###########################################################
+# enclave_to_mrenclave
+#   input:  non-signed enclave file path, enclave configuration file as parameters
+#   output: MRENCLAVE variable
+###########################################################
 function enclave_to_mrenclave() {
     if [[ ! -f $1 ]]; then
         echo "missing enclave file path"
@@ -24,5 +26,4 @@ function enclave_to_mrenclave() {
     sgx_sign gendata -enclave $1 -config $2 -out $TMP1
     dd if=$TMP1 bs=1 skip=188 of=$TMP2 count=32
     MRENCLAVE=$(hex -c $TMP2)
-    echo $MRENCLAVE
 }

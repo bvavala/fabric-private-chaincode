@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "stdint.h"
+#include <stdint.h>
 
 bool verify_evidence(uint8_t* evidence,
     uint32_t evidence_length,

@@ -90,7 +90,7 @@ bool init_attestation(uint8_t* params, uint32_t params_length)
     // keep initializing EPID attestation with SPID and sig_rl
 
     {  // set SPID
-        //std::string hex_spid;
+        // std::string hex_spid;
         HexEncodedString hex_spid;
         const char* p;
         p = json_object_get_string(json_object(root), SPID_TAG);
@@ -104,7 +104,7 @@ bool init_attestation(uint8_t* params, uint32_t params_length)
             ByteArray ba = HexEncodedStringToByteArray(hex_spid);
             memcpy(g_attestation_state.spid.id, ba.data(), ba.size());
         }
-        catch(...)
+        catch (...)
         {
             COND2LOGERR(true, "bad hex spid");
         }

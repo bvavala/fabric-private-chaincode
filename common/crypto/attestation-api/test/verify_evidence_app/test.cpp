@@ -8,8 +8,8 @@
 #include <string>
 #include "error.h"
 #include "logging.h"
-#include "test-utils.h"
 #include "test-defines.h"
+#include "test-utils.h"
 
 #include "attestation_tags.h"
 #include "verify-evidence.h"
@@ -51,7 +51,7 @@ bool test()
     // this test succeeds for simulated attestations, and fails for real ones
     // test with wrong statement
     expected_b = (jsonevidence.find(SIMULATED_TYPE_TAG) == std::string::npos ? false : true);
-    if(expected_b == false)
+    if (expected_b == false)
     {
         LOG_INFO("next test expected to fail");
     }
@@ -63,7 +63,7 @@ bool test()
     // this test succeeds for simulated attestations, and fails for real ones
     // test with wrong code id
     expected_b = (jsonevidence.find(SIMULATED_TYPE_TAG) == std::string::npos ? false : true);
-    if(expected_b == false)
+    if (expected_b == false)
     {
         LOG_INFO("next test expected to fail");
     }

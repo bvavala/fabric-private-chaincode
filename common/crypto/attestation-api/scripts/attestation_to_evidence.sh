@@ -68,7 +68,6 @@ function simulated_to_evidence() {
 ###########################################################
 function get_tag_make_variable() {
     TAGS_PATH="${FPC_PATH}/common/crypto/attestation-api/attestation/attestation_tags.h"
-    #printf -v $1 "$(grep "$1" $TAGS_PATH | awk '{print $3}' | sed 's/"//g')"
     define_to_variable "$TAGS_PATH" "$1"
 }
 

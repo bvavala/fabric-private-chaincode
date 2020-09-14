@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <string>
+#include "error.h"
+#include "logging.h"
 #include "sgx_eid.h"
 #include "sgx_error.h"
 #include "sgx_urts.h"
-#include <string>
-#include "test-utils.h"
 #include "test-defines.h"
+#include "test-utils.h"
 #include "test_enclave_u.h"
-#include "error.h"
-#include "logging.h"
 
 int main()
 {
@@ -35,7 +35,8 @@ int main()
         exit(-1);
     }
 
-    COND2LOGERR(false == load_file(INIT_DATA_INPUT, params_buf, buffer_length, &params_length), "error loading params");
+    COND2LOGERR(false == load_file(INIT_DATA_INPUT, params_buf, buffer_length, &params_length),
+        "error loading params");
     params = std::string(params_buf, params_length);
 
     init_att(global_eid, &b, (uint8_t*)params.c_str(), params.length());
@@ -45,7 +46,8 @@ int main()
         &attestation_length);
     COND2LOGERR(!b, "get_attestation failed");
 
-    COND2LOGERR(false == save_file(GET_ATTESTATION_OUTPUT, (char*)attestation, attestation_length), "error saving attestation");
+    COND2LOGERR(false == save_file(GET_ATTESTATION_OUTPUT, (char*)attestation, attestation_length),
+        "error saving attestation");
     sgx_destroy_enclave(global_eid);
     return 0;
 

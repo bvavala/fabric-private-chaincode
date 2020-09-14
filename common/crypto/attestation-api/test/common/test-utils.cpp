@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "test-utils.h"
 #include <stdio.h>
 #include <sys/stat.h>
-#include "test-utils.h"
 
 #include "error.h"
 #include "logging.h"

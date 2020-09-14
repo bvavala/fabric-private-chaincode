@@ -4,7 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "attestation.h"
 #include <string>
+#include "attestation_tags.h"
 #include "base64.h"
 #include "error.h"
 #include "logging.h"
@@ -14,13 +16,13 @@
 #include "sgx_quote.h"
 #include "sgx_utils.h"
 #include "types.h"
-#include "attestation.h"
-#include "attestation_tags.h"
 
+/**********************************************************************************************************************
+ * C prototype declarations for the ocalls
+ * *******************************************************************************************************************/
 #ifdef __cplusplus
 extern "C" {
 #endif
-// C prototype declarations for the ocalls
 sgx_status_t ocall_init_quote(
     uint8_t* target, uint32_t target_len, uint8_t* egid, uint32_t egid_len);
 sgx_status_t ocall_get_quote(uint8_t* spid,
@@ -37,6 +39,9 @@ sgx_status_t ocall_get_quote(uint8_t* spid,
 }
 #endif /* __cplusplus */
 
+/**********************************************************************************************************************
+ * Attestation APIs
+ * *******************************************************************************************************************/
 typedef struct
 {
     bool initialized;
@@ -50,7 +55,7 @@ attestation_state_t g_attestation_state = {0};
 
 bool init_attestation(uint8_t* params, uint32_t params_length)
 {
-    //open json
+    // open json
     std::string params_string((char*)params, params_length);
     JsonValue root(json_parse_string(params_string.c_str()));
     COND2LOGERR(root == NULL, "cannot parse attestation params");
@@ -67,16 +72,22 @@ bool init_attestation(uint8_t* params, uint32_t params_length)
             goto init_success;
         }
 
-        // check other types
+        // check other types for EPID
         g_attestation_state.sign_type = -1;
         if (g_attestation_state.attestation_type.compare(EPID_LINKABLE_TYPE_TAG) == 0)
+        {
             g_attestation_state.sign_type = SGX_LINKABLE_SIGNATURE;
+        }
 
         if (g_attestation_state.attestation_type.compare(EPID_UNLINKABLE_TYPE_TAG) == 0)
+        {
             g_attestation_state.sign_type = SGX_UNLINKABLE_SIGNATURE;
+        }
 
         COND2LOGERR(g_attestation_state.sign_type == -1, "wrong attestation type");
     }
+
+    // keep initializing EPID attestation with SPID and sig_rl
 
     {  // set SPID
         std::string hex_spid;
@@ -86,7 +97,7 @@ bool init_attestation(uint8_t* params, uint32_t params_length)
 
         hex_spid.assign(p);
         COND2LOGERR(hex_spid.length() != sizeof(sgx_spid_t) * 2, "wrong spid length");
-        // translate spid to binary
+        // translate hex spid to binary
         for (unsigned int i = 0; i < hex_spid.length(); i += 2)
         {
             std::string byteString = hex_spid.substr(i, 2);
@@ -123,9 +134,11 @@ bool get_attestation(uint8_t* statement,
     std::string b64attestation;
     int ret;
 
-    COND2ERR(statement == NULL);
-    COND2ERR(attestation == NULL);
-    COND2ERR(attestation_length == NULL || attestation_max_length == 0);
+    COND2LOGERR(!g_attestation_state.initialized, "attestation not initialized");
+    COND2LOGERR(statement == NULL, "bad input statement");
+    COND2LOGERR(attestation == NULL, "bad input attestation buffer");
+    COND2LOGERR(attestation_length == NULL || attestation_max_length == 0,
+        "bad input attestation buffer size");
 
     if (g_attestation_state.attestation_type.compare(SIMULATED_TYPE_TAG) == 0)
     {
@@ -137,8 +150,8 @@ bool get_attestation(uint8_t* statement,
         ocall_init_quote(
             (uint8_t*)&qe_target_info, sizeof(qe_target_info), (uint8_t*)&egid, sizeof(egid));
 
-        ByteArray fixed_size_statement(statement, statement + statement_length);
-        ByteArray rd = pdo::crypto::ComputeMessageHash(fixed_size_statement);
+        ByteArray ba_statement(statement, statement + statement_length);
+        ByteArray rd = pdo::crypto::ComputeMessageHash(ba_statement);
         // ComputeMessageHash uses sha256
         COND2LOGERR(rd.size() > sizeof(sgx_report_data_t), "report data too long");
         memcpy(&report_data, rd.data(), rd.size());
@@ -152,9 +165,8 @@ bool get_attestation(uint8_t* statement,
             attestation_max_length, attestation_length);
         COND2LOGERR(*attestation_length == 0, "error get quote");
 
-        // convert to base64
+        // convert to base64 (accepted by IAS)
         b64attestation = base64_encode((const unsigned char*)attestation, *attestation_length);
-        LOG_DEBUG("b64 attestation: %s", b64attestation.c_str());
         COND2LOGERR(b64attestation.length() > attestation_max_length,
             "not enough space for b64 conversion");
         memcpy(attestation, b64attestation.c_str(), b64attestation.length());
@@ -162,21 +174,33 @@ bool get_attestation(uint8_t* statement,
     }
 
     {
-        //package the output
+        // package the output
         size_t serialization_size = 0;
         JsonValue root_value(json_value_init_object());
         JSON_Object* root_object = json_value_get_object(root_value);
         COND2LOGERR(root_object == NULL, "can't create json");
 
-        COND2LOGERR(JSONFailure == json_object_set_string(root_object, ATTESTATION_TYPE_TAG, g_attestation_state.attestation_type.c_str()), "error serializing attestation type");
-        COND2LOGERR(JSONFailure == json_object_set_string(root_object, ATTESTATION_TAG, b64attestation.c_str()), "error serializing attestation");
+        COND2LOGERR(JSONFailure == json_object_set_string(root_object, ATTESTATION_TYPE_TAG,
+                                       g_attestation_state.attestation_type.c_str()),
+            "error serializing attestation type");
+        COND2LOGERR(JSONFailure == json_object_set_string(
+                                       root_object, ATTESTATION_TAG, b64attestation.c_str()),
+            "error serializing attestation");
 
         serialization_size = json_serialization_size(root_value);
-        COND2LOGERR(serialization_size > attestation_max_length, "not enough space for b64 conversion");
+        COND2LOGERR(
+            serialization_size > attestation_max_length, "not enough space for b64 conversion");
 
-        COND2LOGERR(JSONFailure == json_serialize_to_buffer(root_value, (char*)attestation, serialization_size), "error packaging attestation");
-        //json_serialize_to_buffer add the null byte, so we remove it
-        *attestation_length = serialization_size - 1;
+        COND2LOGERR(JSONFailure == json_serialize_to_buffer(
+                                       root_value, (char*)attestation, serialization_size),
+            "error packaging attestation");
+        // remove terminating null byte (if any)
+        if (attestation[serialization_size] == '\0')
+        {
+            serialization_size -= 1;
+        }
+
+        *attestation_length = serialization_size;
     }
 
     return true;

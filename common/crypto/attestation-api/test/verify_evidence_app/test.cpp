@@ -5,33 +5,44 @@
  */
 
 #include "test.h"
-#include <string>
 #include <string.h>
+#include <sys/stat.h>
+#include <string>
 #include "base64.h"
 #include "error.h"
 #include "logging.h"
 
-#include "verify-evidence.h"
 #include "attestation_tags.h"
+#include "verify-evidence.h"
 
 #define STATEMENT_FILE "statement.txt"
 #define CODE_ID_FILE "code_id.txt"
 #define EVIDENCE_FILE "verify_evidence_input.txt"
 
-bool load_file(const char *filename, char* buffer, uint32_t buffer_length)
+bool load_file(const char* filename, char* buffer, uint32_t buffer_length, uint32_t* written_bytes)
 {
     char* p;
-    buffer[0] = '\0';
+    uint32_t file_size, bytes_read;
+    struct stat s;
+
     FILE* fp = fopen(filename, "r");
     COND2LOGERR(fp == NULL, "can't open file");
-    p = fgets(buffer, buffer_length, fp);
-    LOG_DEBUG("read (len=%u, max=%u): %s\n", strlen(buffer), buffer_length, buffer);
-    COND2LOGERR(p == NULL, "error fgets");
-    //COND2LOGERR(!feof(fp), "EOF not reached");
-    COND2LOGERR(strlen(buffer) >= buffer_length -1, "buffer too small");
+
+    COND2LOGERR(0 > fstat(fileno(fp), &s), "cannot stat file");
+    file_size = s.st_size;
+    COND2LOGERR(file_size > buffer_length, "buffer too small");
+
+    bytes_read = fread(buffer, 1, file_size, fp);
+    COND2LOGERR(bytes_read != file_size, "read bytes don't match file size");
+    *written_bytes = bytes_read;
+
     fclose(fp);
     return true;
+
 err:
+    if (fp)
+        fclose(fp);
+
     return false;
 }
 
@@ -39,24 +50,28 @@ bool test()
 {
     uint32_t buffer_length = 1 << 20;
     char buffer[buffer_length];
+    uint32_t filled_size;
     std::string jsonevidence;
     std::string expected_statement;
     std::string expected_code_id;
     std::string wrong_expected_statement;
     std::string wrong_expected_code_id;
 
-    COND2LOGERR(!load_file(EVIDENCE_FILE, buffer, buffer_length), "can't read input evidence " EVIDENCE_FILE); 
-    jsonevidence = std::string(buffer);
+    COND2LOGERR(!load_file(EVIDENCE_FILE, buffer, buffer_length, &filled_size),
+        "can't read input evidence " EVIDENCE_FILE);
+    jsonevidence = std::string(buffer, filled_size);
 
-    COND2LOGERR(!load_file(STATEMENT_FILE, buffer, buffer_length), "can't read input statement " STATEMENT_FILE);
-    expected_statement = std::string(buffer);
+    COND2LOGERR(!load_file(STATEMENT_FILE, buffer, buffer_length, &filled_size),
+        "can't read input statement " STATEMENT_FILE);
+    expected_statement = std::string(buffer, filled_size);
 
-    COND2LOGERR(!load_file(CODE_ID_FILE, buffer, buffer_length), "can't read input code id " CODE_ID_FILE);
-    expected_code_id = std::string(buffer);
+    COND2LOGERR(!load_file(CODE_ID_FILE, buffer, buffer_length, &filled_size),
+        "can't read input code id " CODE_ID_FILE);
+    expected_code_id = std::string(buffer, filled_size);
 
     wrong_expected_statement = std::string("wrong statement");
-    wrong_expected_code_id = std::string(
-        "BADBADBADBAD9E317C4F7312A0D644FFC052F7645350564D43586D8102663358");
+    wrong_expected_code_id =
+        std::string("BADBADBADBAD9E317C4F7312A0D644FFC052F7645350564D43586D8102663358");
 
     bool b, expected_b;
     // test normal situation
@@ -70,8 +85,7 @@ bool test()
     b = verify_evidence((uint8_t*)jsonevidence.c_str(), jsonevidence.length(),
         (uint8_t*)wrong_expected_statement.c_str(), wrong_expected_statement.length(),
         (uint8_t*)expected_code_id.c_str(), expected_code_id.length());
-    expected_b = (jsonevidence.find(SIMULATED_TYPE_TAG) == std::string::npos ? false : true); 
-    LOG_DEBUG("json %s tag %s simulated %d result %d expected %d\n", jsonevidence.c_str(), SIMULATED_TYPE_TAG, jsonevidence.find(SIMULATED_TYPE_TAG) == std::string::npos, b, expected_b);
+    expected_b = (jsonevidence.find(SIMULATED_TYPE_TAG) == std::string::npos ? false : true);
     COND2LOGERR(b != expected_b, "evidence with bad statement succeeded");
 
     // this test succeeds for simulated attestations, and fails for real ones
@@ -79,7 +93,7 @@ bool test()
     b = verify_evidence((uint8_t*)jsonevidence.c_str(), jsonevidence.length(),
         (uint8_t*)expected_statement.c_str(), expected_statement.length(),
         (uint8_t*)wrong_expected_code_id.c_str(), wrong_expected_code_id.length());
-    expected_b = (jsonevidence.find(SIMULATED_TYPE_TAG) == std::string::npos ? false : true); 
+    expected_b = (jsonevidence.find(SIMULATED_TYPE_TAG) == std::string::npos ? false : true);
     COND2LOGERR(b != expected_b, "evidence with bad code id succeeded");
 
     LOG_INFO("Test Successful\n");

@@ -18,8 +18,8 @@ SET(VERIFY_EVIDENCE_APP verify_evidence_app)
 PROJECT(${VERIFY_EVIDENCE_APP} CXX)
 
 ADD_EXECUTABLE(${VERIFY_EVIDENCE_APP}
-    main.cpp
-    test.cpp
+    ${VERIFY_EVIDENCE_APP}/main.cpp
+    ${VERIFY_EVIDENCE_APP}/test.cpp
     "$ENV{FPC_PATH}/common/base64/base64.cpp"
     )
 
@@ -28,7 +28,7 @@ TARGET_INCLUDE_DIRECTORIES(${VERIFY_EVIDENCE_APP} PRIVATE "$ENV{FPC_PATH}/common
 TARGET_INCLUDE_DIRECTORIES(${VERIFY_EVIDENCE_APP} PRIVATE "$ENV{FPC_PATH}/common/crypto/attestation-api/attestation")
 TARGET_INCLUDE_DIRECTORIES(${VERIFY_EVIDENCE_APP} PRIVATE "$ENV{FPC_PATH}/common/crypto/attestation-api/evidence")
 
-TARGET_COMPILE_OPTIONS(${VERIFY_EVIDENCE_APP} PRIVATE ${COMMON_CXX_FLAGS} "-DPDO_DEBUG_BUILD=1 -D_UNTRUSTED_")
+#TARGET_COMPILE_OPTIONS(${VERIFY_EVIDENCE_APP} PRIVATE ${COMMON_CXX_FLAGS} "-DPDO_DEBUG_BUILD=1 -D_UNTRUSTED_")
 
 # Link the untrusted test application against the untrusted library and openssl
 TARGET_LINK_LIBRARIES(${VERIFY_EVIDENCE_APP}
@@ -41,17 +41,15 @@ TARGET_LINK_LIBRARIES(${VERIFY_EVIDENCE_APP}
 ## this application performs a sim/hw attestation from input files and writes output on file
 ###################################################################################################
 
-ADD_SUBDIRECTORY(trusted/enclave)
+ADD_SUBDIRECTORY(get_attestation_app/enclave)
 
-SET(GET_ATTESTATION_APP get_attestation_app)
+SET(GET_ATTESTATION_APP "get_attestation_app")
 PROJECT(${GET_ATTESTATION_APP} CXX C)
 
 # ENCLAVE_EDL is defined in the enclave subdirectory
 SGX_EDGE_UNTRUSTED(${ENCLAVE_EDL} ENCLAVE_EDGE_SOURCES)
 
-ADD_EXECUTABLE(${GET_ATTESTATION_APP} trusted/app/main.cpp ${ENCLAVE_EDGE_SOURCES})
-
-#TARGET_COMPILE_DEFINITIONS(${GET_ATTESTATION_APP} PRIVATE ${IAS_CA_CERT_REQUIRED_FLAGS})
+ADD_EXECUTABLE(${GET_ATTESTATION_APP} get_attestation_app/app/main.cpp ${ENCLAVE_EDGE_SOURCES})
 
 # Make sure the enclave builds before the test app that links it
 ADD_DEPENDENCIES(${GET_ATTESTATION_APP} test_enclave)
@@ -63,19 +61,20 @@ TARGET_LINK_LIBRARIES(${GET_ATTESTATION_APP} ${URTS_LIBRARY_NAME} ${AE_SERVICE_L
 
 TARGET_INCLUDE_DIRECTORIES(${GET_ATTESTATION_APP} PUBLIC $ENV{FPC_PATH}/common)
 
+SET(ATTESTED_EVIDENCE_TEST_FILE "attested_evidence_test.sh")
 ADD_CUSTOM_COMMAND(
     TARGET ${GET_ATTESTATION_APP}
     PRE_BUILD
-    COMMAND cp test.sh ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
-    COMMAND cp trusted/enclave/test_enclave.config.xml ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+    COMMAND cp ${ATTESTED_EVIDENCE_TEST_FILE} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+    COMMAND cp get_attestation_app/enclave/test_enclave.config.xml ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
     COMMAND mkdir -p ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/../scripts && cp ../scripts/* ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/../scripts
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
 
 # Register this application as a test
 add_test(
-    NAME "attestation_test_script"
-    COMMAND bash ./test.sh
+    NAME ${ATTESTED_EVIDENCE_TEST_FILE}
+    COMMAND bash ./${ATTESTED_EVIDENCE_TEST_FILE}
     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
     )
 
@@ -85,4 +84,5 @@ add_test(
 IF(DEFINED TEST_TARGET)
     ADD_DEPENDENCIES(${TEST_TARGET} ${VERIFY_EVIDENCE_APP})
     ADD_DEPENDENCIES(${TEST_TARGET} ${GET_ATTESTATION_APP})
+    ADD_DEPENDENCIES(${TEST_TARGET} ${ATTESTED_EVIDENCE_TEST_FILE})
 endif()

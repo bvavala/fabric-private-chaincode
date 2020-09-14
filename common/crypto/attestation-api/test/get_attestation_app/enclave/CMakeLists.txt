@@ -59,5 +59,12 @@ TARGET_LINK_LIBRARIES(${ENCLAVE_NAME} -Wl,--whole-archive -lsgx_tsgxssl -Wl,--no
 TARGET_LINK_LIBRARIES(${ENCLAVE_NAME} -Wl,--whole-archive -l${TRTS_LIBRARY_NAME} -Wl,--no-whole-archive)
 TARGET_LINK_LIBRARIES(${ENCLAVE_NAME} -Wl,--start-group ${T_CRYPTO_LIB_NAME} ${T_CRYPTO_ADAPT_LIB_NAME} sgx_tsgxssl_crypto sgx_tstdc sgx_tcxx sgx_tcrypto ${SERVICE_LIBRARY_NAME} -Wl,--end-group)
 
-SGX_SIGN_ENCLAVE(${ENCLAVE_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/enclave_sign.pem" ${ENCLAVE_CONFIG})
+SET(ENCLAVE_SIGNING_KEY "${ENCLAVE_NAME}.sign.pem")
+SGX_SIGN_ENCLAVE(${ENCLAVE_NAME} ${ENCLAVE_SIGNING_KEY} ${ENCLAVE_CONFIG})
+
+ADD_CUSTOM_COMMAND(
+    TARGET ${ENCLAVE_NAME}
+    PRE_BUILD
+    COMMAND openssl genrsa -3 -out ${ENCLAVE_SIGNING_KEY} 3072
+    )
 

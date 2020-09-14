@@ -15,6 +15,7 @@
 #include "sgx_utils.h"
 #include "types.h"
 #include "attestation.h"
+#include "attestation_tags.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -174,7 +175,8 @@ bool get_attestation(uint8_t* statement,
         COND2LOGERR(serialization_size > attestation_max_length, "not enough space for b64 conversion");
 
         COND2LOGERR(JSONFailure == json_serialize_to_buffer(root_value, (char*)attestation, serialization_size), "error packaging attestation");
-        *attestation_length = serialization_size;
+        //json_serialize_to_buffer add the null byte, so we remove it
+        *attestation_length = serialization_size - 1;
     }
 
     return true;

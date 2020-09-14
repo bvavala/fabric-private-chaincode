@@ -34,7 +34,7 @@ int printf(const char* format, ...);
 #define RED "\x1B[31m"
 
 #ifndef DO_DEBUG
-#define DO_DEBUG false
+#define DO_DEBUG true
 #endif
 
 #ifndef DO_INFO

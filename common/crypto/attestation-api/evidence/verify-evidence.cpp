@@ -5,17 +5,21 @@
  */
 
 #include "verify-evidence.h"
+#include "attestation_tags.h"
 #include <string>
+#include <string.h>
 #include <vector>
 #include "base64.h"
 #include "crypto.h"
 #include "parson.h"
+#include "pdo/common/jsonvalue.h"
 // TODO remove all logs
 //
 #define PDO_DEBUG_BUILD 1
 #include "log.h"
 #include "pdo_error.h"
 
+//#include "logging.h"
 #define LOG_DEBUG(fmt, ...) SAFE_LOG(PDO_LOG_INFO, fmt, ##__VA_ARGS__)
 #define LOG_ERROR(fmt, ...) SAFE_LOG(PDO_LOG_INFO, fmt, ##__VA_ARGS__)
 
@@ -26,7 +30,7 @@ bool unwrap_ias_evidence(const std::string& evidence_str,
     std::string& ias_certificates,
     std::string& ias_report)
 {
-    JSON_Value* root_value = json_parse_string(evidence_str.c_str());
+    JsonValue root_value = json_parse_string(evidence_str.c_str());
     JSON_Object* root_object = json_value_get_object(root_value);
     COND2ERR(root_object == NULL);
 
@@ -42,15 +46,10 @@ bool unwrap_ias_evidence(const std::string& evidence_str,
     COND2ERR(ias_report.length() == 0);
     LOG_DEBUG("report: %s\n", ias_report.c_str());
 
-    json_value_free(root_value);
     return true;
 
 err:
-    if (root_value != NULL)
-    {
-        json_value_free(root_value);
-    }
-
+    LOG_DEBUG("ias evidence: %s\n", evidence_str.c_str());
     return false;
 }
 
@@ -124,7 +123,7 @@ bool extract_hex_from_report(
     sgx_report_body_t* rb;
     ByteArray ba;
 
-    JSON_Value* root_value = json_parse_string(ias_report.c_str());
+    JsonValue root_value = json_parse_string(ias_report.c_str());
     JSON_Object* root_object = json_value_get_object(root_value);
     COND2ERR(root_object == NULL);
 
@@ -138,53 +137,42 @@ bool extract_hex_from_report(
     ba = ByteArray(bin_quote.data() + offset, bin_quote.data() + offset + size);
     hex = ByteArrayToHexEncodedString(ba);
 
-    json_value_free(root_value);
     return true;
 
 err:
-    if (root_value != NULL)
-    {
-        json_value_free(root_value);
-    }
-
     return false;
 }
 
-bool verify_evidence(uint8_t* evidence,
-    uint32_t evidence_length,
-    uint8_t* expected_statement,
-    uint32_t expected_statement_length,
-    uint8_t* expected_code_id,
-    uint32_t expected_code_id_length)
+bool verify_ias_evidence(ByteArray& evidence, ByteArray& expected_statement, ByteArray& expected_code_id)
 {
-    bool b;
+    std::string evidence_str((char*)evidence.data(), evidence.size());
+    std::string expected_hex_id((char*)expected_code_id.data(), expected_code_id.size());
 
-    COND2ERR(evidence == NULL);
-    COND2ERR(evidence_length == 0);
+    std::string ias_signature, ias_certificates, ias_report;
+    std::vector<std::string> ias_certificate_vector;
 
-    {
-        std::string b64evidence((const char*)evidence, evidence_length);
-        std::string evidence_str = base64_decode(b64evidence.c_str());
-        LOG_DEBUG("evidence %s\n", evidence_str.c_str());
-
-        std::string ias_signature, ias_certificates, ias_report;
-        COND2ERR(false ==
+    // get evidence data
+    COND2ERR(false ==
                  unwrap_ias_evidence(evidence_str, ias_signature, ias_certificates, ias_report));
 
-        // split certs
-        std::vector<std::string> ias_certificate_vector;
-        COND2ERR(false == split_certificates(ias_certificates, ias_certificate_vector));
+    // split certs
+    COND2ERR(false == split_certificates(ias_certificates, ias_certificate_vector));
 
+    {
         // verify report status
         const int group_out_of_date_ok = 1;
         COND2ERR(VERIFY_SUCCESS != verify_enclave_quote_status(ias_report.c_str(),
-                                       ias_report.length(), group_out_of_date_ok));
+                                   ias_report.length(), group_out_of_date_ok));
+    }
 
+    {
         // check root cert
         const int root_certificate_index = 1;
         COND2ERR(VERIFY_SUCCESS != verify_ias_certificate_chain(
                                        ias_certificate_vector[root_certificate_index].c_str()));
+    }
 
+    {
         // check signing cert
         const int signing_certificate_index = 0;
         COND2ERR(VERIFY_SUCCESS != verify_ias_certificate_chain(
@@ -195,32 +183,81 @@ bool verify_evidence(uint8_t* evidence,
                                        ias_certificate_vector[signing_certificate_index].c_str(),
                                        ias_report.c_str(), ias_report.length(),
                                        (char*)ias_signature.c_str(), ias_signature.length()));
+    }
 
+    {
         // check code id
-        std::string hex_id, expected_hex_id_str;
-        expected_hex_id_str = std::string((const char*)expected_code_id, expected_code_id_length);
+        std::string hex_id;
         COND2ERR(false ==
                  extract_hex_from_report(ias_report,
                      offsetof(sgx_quote_t, report_body) + offsetof(sgx_report_body_t, mr_enclave),
                      sizeof(sgx_measurement_t), hex_id));
-        LOG_DEBUG("hex id: %s\n", hex_id.c_str());
-        LOG_DEBUG("expected hex id: %s\n", expected_hex_id_str.c_str());
-        COND2ERR(0 != hex_id.compare(expected_hex_id_str));
+        LOG_DEBUG("hex id(%u): %s\n", hex_id.length(), hex_id.c_str());
+        LOG_DEBUG("expected hex id(%u): %s\n", expected_hex_id.length(), expected_hex_id.c_str());
+        COND2ERR(0 != hex_id.compare(expected_hex_id));
+    }
 
+    {
         // check report data
         std::string hex_report_data, expected_hex_report_data_str;
         COND2ERR(false ==
                  extract_hex_from_report(ias_report,
                      offsetof(sgx_quote_t, report_body) + offsetof(sgx_report_body_t, report_data),
                      sizeof(sgx_report_data_t), hex_report_data));
-        expected_hex_report_data_str = ByteArrayToHexEncodedString(pdo::crypto::ComputeMessageHash(
-            ByteArray(expected_statement, expected_statement + expected_statement_length)));
+        expected_hex_report_data_str = ByteArrayToHexEncodedString(pdo::crypto::ComputeMessageHash(expected_statement));
         expected_hex_report_data_str.append(expected_hex_report_data_str.length(), '0');
         LOG_DEBUG("hex report data: %s\n", hex_report_data.c_str());
         LOG_DEBUG("expected hex report data: %s\n", expected_hex_report_data_str.c_str());
         COND2ERR(0 != hex_report_data.compare(expected_hex_report_data_str));
     }
-    LOG_DEBUG("verify evidence success\n");
+
+    return true;
+
+err:
+    return false;
+}
+
+bool verify_evidence(uint8_t* evidence,
+    uint32_t evidence_length,
+    uint8_t* expected_statement,
+    uint32_t expected_statement_length,
+    uint8_t* expected_code_id,
+    uint32_t expected_code_id_length)
+{
+    bool ret = false;
+    std::string evidence_str((char*)evidence, evidence_length);
+    ByteArray ba_expected_statement(expected_statement, expected_statement + expected_statement_length);
+    ByteArray ba_expected_code_id(expected_code_id, expected_code_id + expected_code_id_length);
+
+    LOG_DEBUG("verify evidence of %s\n", evidence_str.c_str());
+
+    JsonValue root_value = json_parse_string(evidence_str.c_str());
+    JSON_Object* root_object = json_value_get_object(root_value);
+
+    const char* s = json_object_get_string(root_object, ATTESTATION_TYPE_TAG);
+    std::string attestation_type(s?s:"");
+    const char* evidence_field = json_object_get_string(root_object, EVIDENCE_TAG);
+    COND2LOGERR(root_object == NULL, "invalid input");
+    COND2LOGERR(s == NULL, "no attestation type");
+    COND2LOGERR(evidence_field == NULL, "no evidence field");
+
+    if(0 == attestation_type.compare(SIMULATED_TYPE_TAG))
+    {
+        // nothing to check
+        ret = true;
+    }
+
+    if(0 == attestation_type.compare(EPID_LINKABLE_TYPE_TAG) || 0 == attestation_type.compare(EPID_UNLINKABLE_TYPE_TAG))
+    {
+        LOG_DEBUG("evidence field (%u): %s",  strlen(evidence_field), evidence_field);
+        ByteArray ba_evidence(evidence_field, evidence_field + strlen(evidence_field));
+        COND2ERR(false == verify_ias_evidence(ba_evidence, ba_expected_statement, ba_expected_code_id));
+        ret = true;
+    }
+
+    COND2LOGERR(ret == false, "verify evidence failed");
+
+    LOG_DEBUG("verify evidence success cpp\n");
     return true;
 
 err:

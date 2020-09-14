@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include <stdint.h>
+
 bool init_attestation(uint8_t* params, uint32_t params_length);
 
 bool get_attestation(uint8_t* statement,

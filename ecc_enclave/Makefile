@@ -15,6 +15,7 @@ $(BUILD_DIR):
 	fi
 
 build: $(BUILD_DIR)
+	ls $(TOP)/common/protos
 	$(MAKE) --directory=$<
 
 clean:

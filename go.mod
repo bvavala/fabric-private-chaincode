@@ -32,5 +32,5 @@ require (
 	github.com/spf13/viper v0.0.0-20150908122457-1967d93db724
 	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a
 	golang.org/x/tools v0.0.0-20200323164354-18ea2c8f7359
-	google.golang.org/protobuf v1.25.0 // indirect
+	google.golang.org/protobuf v1.25.0
 )

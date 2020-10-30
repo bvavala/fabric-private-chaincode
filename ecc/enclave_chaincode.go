@@ -1,7 +1,8 @@
 /*
-Copyright IBM Corp. All Rights Reserved.
+   Copyright IBM Corp. All Rights Reserved.
+   Copyright 2020 Intel Corporation
 
-SPDX-License-Identifier: Apache-2.0
+   SPDX-License-Identifier: Apache-2.0
 */
 
 package ecc
@@ -11,14 +12,17 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger-labs/fabric-private-chaincode/ecc/crypto"
 	"github.com/hyperledger-labs/fabric-private-chaincode/ecc/enclave"
 	"github.com/hyperledger-labs/fabric-private-chaincode/ecc/ercc"
 	"github.com/hyperledger-labs/fabric-private-chaincode/ecc/tlcc"
+	fpcpb "github.com/hyperledger-labs/fabric-private-chaincode/internal/protos"
 	"github.com/hyperledger-labs/fabric-private-chaincode/internal/utils"
 	"github.com/hyperledger/fabric-chaincode-go/shim"
 	pb "github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/common/flogging"
+	"github.com/hyperledger/fabric/core/endorser"
 )
 
 const enclaveLibFile = "enclave/lib/enclave.signed.so"
@@ -71,6 +75,8 @@ func (t *EnclaveChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response 
 		return t.setup(stub)
 	} else if function == "__getEnclavePk" { //get Enclave PK
 		return t.getEnclavePk(stub)
+	} else if function == "createenclave" {
+		return t.createenclave(stub)
 	}
 
 	// Remaining functions are user functions, so pass them on the enclave and
@@ -88,19 +94,6 @@ func (t *EnclaveChaincode) setup(stub shim.ChaincodeStubInterface) pb.Response {
 	sigRl := []byte(nil)
 	sigRlSize := uint(0)
 	channelName := stub.GetChannelID()
-
-	// check if there is already an enclave
-	if t.enclave == nil {
-		return shim.Error("ecc: Enclave has already been initialized! Destroy first!!")
-	}
-
-	// create new Enclave
-	// TODO we should return error in case there is any :)
-	if err := t.enclave.Create(enclaveLibFile); err != nil {
-		errMsg := fmt.Sprintf("t.enclave.Create  failed: %s", err)
-		logger.Errorf(errMsg)
-		return shim.Error(errMsg)
-	}
 
 	// write mrenclave to ledger
 	mrenclave, err := t.enclave.MrEnclave()
@@ -172,6 +165,125 @@ func (t *EnclaveChaincode) setup(stub shim.ChaincodeStubInterface) pb.Response {
 	}
 
 	return shim.Success([]byte(enclavePkBase64))
+}
+
+// ============================================================
+// createenclave -
+// ============================================================
+func (t *EnclaveChaincode) createenclave(stub shim.ChaincodeStubInterface) pb.Response {
+	// TODO admin authentication?
+	// TODO check one time create?
+	logger.Debugf("createenclave")
+
+	// check if there is already an enclave
+	if t.enclave == nil {
+		return shim.Error("ecc: Enclave has already been initialized! Destroy first!!")
+	}
+
+	args := stub.GetStringArgs()
+
+	if len(args) != 3 {
+		errMsg := fmt.Sprintf("createenclave: unexpected params number")
+		logger.Errorf(errMsg)
+		return shim.Error(errMsg)
+	}
+
+	// grab attestation params
+	b64AttestationParams := args[1]
+	logger.Debugf("b64AttestationParams: %s", b64AttestationParams)
+	attestationParamsBytes, err := base64.StdEncoding.DecodeString(b64AttestationParams)
+	if err != nil {
+		errMsg := fmt.Sprintf("createenclave: b64AttestationParams: %s", err)
+		logger.Errorf(errMsg)
+		return shim.Error(errMsg)
+	}
+
+	// create Host_Parameters <<<
+	// grab host params
+	b64HostParams := args[2]
+	logger.Debugf("b64HostParams: %s", b64HostParams)
+	hostParamsBytes, err := base64.StdEncoding.DecodeString(b64HostParams)
+	if err != nil {
+		errMsg := fmt.Sprintf("createenclave: b64HostParams: %s", err)
+		logger.Errorf(errMsg)
+		return shim.Error(errMsg)
+	}
+
+	creatorBytes, err := stub.GetCreator()
+	if err != nil {
+		errMsg := fmt.Sprintf("createenclave: get creator: %s", err)
+		logger.Errorf(errMsg)
+		return shim.Error(errMsg)
+	}
+
+	hostParametersProto := &fpcpb.Host_Parameters{
+		Creator:      creatorBytes,
+		PeerEndpoint: hostParamsBytes,
+	}
+	hostParametersProtoBytes, err := proto.Marshal(hostParametersProto)
+	if err != nil {
+		errMsg := fmt.Sprintf("createenclave: cannot marshall host params")
+		logger.Errorf(errMsg)
+		return shim.Error(errMsg)
+	}
+	// create Host_Parameters >>>
+
+	// create CC_Parameters <<<
+	// get signed proposal to extract chaicode id
+	signedProposal, err := stub.GetSignedProposal()
+	if err != nil {
+		errMsg := fmt.Sprintf("createenclave: cannot get signed proposal")
+		logger.Errorf(errMsg)
+		return shim.Error(errMsg)
+	}
+	unpackedProposal, err := endorser.UnpackProposal(signedProposal)
+	if err != nil {
+		errMsg := fmt.Sprintf("createenclave: cannot unpack proposal")
+		logger.Errorf(errMsg)
+		return shim.Error(errMsg)
+	}
+	logger.Debugf("Chaincode id: %s", unpackedProposal.ChaincodeName)
+
+	//get chaincode definition
+	ccDef, err := utils.GetChaincodeDefinition(unpackedProposal.ChaincodeName, stub)
+	if err != nil {
+		errMsg := fmt.Sprintf("createenclave: cannot get ccdefinition")
+		logger.Errorf(errMsg)
+		return shim.Error(errMsg)
+	}
+	logger.Debugf("Chaincode definition: %d %s", ccDef.Sequence, ccDef.Version)
+
+	//get channel id
+	channelName := stub.GetChannelID()
+	logger.Debugf("Channel ID: %s", channelName)
+
+	// produce cc params
+	ccParametersProto := &fpcpb.CC_Parameters{
+		ChaincodeId: unpackedProposal.ChaincodeName,
+		Version:     ccDef.Version,
+		Sequence:    ccDef.Sequence,
+		ChannelId:   channelName,
+	}
+	ccParametersBytes, err := proto.Marshal(ccParametersProto)
+	if err != nil {
+		errMsg := fmt.Sprintf("createenclave: cannot marshall cc params")
+		logger.Errorf(errMsg)
+		return shim.Error(errMsg)
+	}
+	// create CC_Parameters >>>
+
+	// create new Enclave
+	credentials, err := t.enclave.Create(enclaveLibFile, ccParametersBytes, attestationParamsBytes, hostParametersProtoBytes)
+	if err != nil {
+		errMsg := fmt.Sprintf("createenclave: failed: %s", err)
+		logger.Errorf(errMsg)
+		return shim.Error(errMsg)
+	}
+
+	b64Credentials := base64.StdEncoding.EncodeToString([]byte(credentials))
+	logger.Debugf("createenclave b64 response: %s", b64Credentials)
+
+	return shim.Success([]byte(b64Credentials))
 }
 
 // ============================================================

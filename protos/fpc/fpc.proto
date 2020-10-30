@@ -26,9 +26,9 @@ message CC_Parameters {
 }
 
 message Host_Parameters {
-    // peer that hosts the enclave
-    // this is a serialized msp.SerializedIdentity (see https://github.com/hyperledger/fabric-protos/blob/master/msp/identities.proto#L15)
-    bytes peer_identity = 1;
+    bytes creator = 1;
+
+    bytes peer_endpoint = 2;
 
     // Post-MVP: This will be a X509 peer certificate on
     // Enclave_VK and CC_Parameters signed by a CA rooted in
@@ -37,7 +37,7 @@ message Host_Parameters {
     //particular FPC Chaincode enclave.   See additional information in
     // fpc-registration.puml in the 'Org-Enclave binding/certification' group.
     // Note that this field may be moved elsewhere.
-    bytes certificate = 2;
+    //bytes certificate = 2;
 }
 
 message Attested_Data {

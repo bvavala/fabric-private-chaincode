@@ -419,6 +419,8 @@ handle_lifecycle_chaincode_commit() {
 
 handle_lifecycle_chaincode_createenclave() {
     # - remember variables we might need later
+    # set the default attestation params. If SGX creds are specified, override later
+    ATTESTATION_PARAMS=$(jq -c -n --arg atype "simulated" '{attestation_type: $atype}' | base64 --wrap=0)
     while [[ $# > 0 ]]; do
     case "$1" in
         -n|--name)
@@ -433,11 +435,23 @@ handle_lifecycle_chaincode_createenclave() {
         ORDERER_ADDR=$2;
         shift; shift
         ;;
+        -s|--sgx-credentials-path)
+        SGX_CREDENTIALS_PATH=$2
+        ATTESTATION_PARAMS=$(jq -c -n --arg atype "$(cat ${SGX_CREDENTIALS_PATH}/spid_type.txt)" --arg spid "$(cat ${SGX_CREDENTIALS_PATH}/spid.txt)" --arg sig_rl "" '{attestation_type: $atype, hex_spid: $spid, sig_rl: $sig_rl}' | base64 --wrap=0)
+        shift; shift
+        ;;
+        --peerAddresses)
+        PEER_ADDRESS=$2
+        shift; shift
+        ;;
         *)
         die "createenclave: invalid option"
         ;;
         esac
     done
+
+    # peer address must be specified in createenclave
+    [ -z "${PEER_ADDRESS}" ] && die "No peer address specified in createenclave"
 
     # - createenclave can only be run on FPC chaincodes
     FILES_NUM=$(ls -1 ${FABRIC_STATE_DIR}/is-fpc-c-chaincode.${CC_NAME}.* 2> /dev/null | wc -l) 
@@ -445,11 +459,19 @@ handle_lifecycle_chaincode_createenclave() {
         die "createenclave: $CC_NAME is not written in language 'fpc-c'"
     fi
 
+    # embed json in protobuf message and b64 encode it
+    ATTESTATION_PARAMS_PROTO=$(echo "parameters: \"${ATTESTATION_PARAMS}\"" | protoc --encode attestation.AttestationParameters --proto_path=${FPC_TOP_DIR}/protos/fpc ${FPC_TOP_DIR}/protos/fpc/attestation.proto | base64 --wrap=0)
+
+    # create host params
+    HOST_PARAMS=$(echo "${PEER_ADDRESS}" | base64 --wrap=0)
+
+    # trigger createenclave
+    try_out_r $RUN ${FABRIC_BIN_DIR}/peer chaincode query -o ${ORDERER_ADDR} -C ${CHAN_ID} -n ${CC_NAME} -c '{"Args":["createenclave", "'${ATTESTATION_PARAMS_PROTO}'", "'${HOST_PARAMS}'"]}'
+    echo "createenclave response (b64): ${RESPONSE}"
+    echo "createenclave response (decoded): $(echo "${RESPONSE}" | base64 -d)"
+
     # - setup internal ecc state, e.g., register chaincode
     try ${FABRIC_BIN_DIR}/peer chaincode invoke -o ${ORDERER_ADDR} -C ${CHAN_ID} -n ${CC_NAME} -c '{"Args":["__setup", "'${ERCC_ID}'"]}' --waitForEvent
-
-    # - retrieve public-key (just for fun of it ...)
-    try $RUN ${FABRIC_BIN_DIR}/peer chaincode query -o ${ORDERER_ADDR} -C ${CHAN_ID} -n ${CC_NAME} -c '{"Args":["__getEnclavePk"]}'
 
     # - exit (otherwise main function will invoke operation again!)
     exit 0

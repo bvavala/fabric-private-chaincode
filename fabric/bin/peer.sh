@@ -437,7 +437,13 @@ handle_lifecycle_chaincode_createenclave() {
         ;;
         -s|--sgx-credentials-path)
         SGX_CREDENTIALS_PATH=$2
-        ATTESTATION_PARAMS=$(jq -c -n --arg atype "$(cat ${SGX_CREDENTIALS_PATH}/spid_type.txt)" --arg spid "$(cat ${SGX_CREDENTIALS_PATH}/spid.txt)" --arg sig_rl "" '{attestation_type: $atype, hex_spid: $spid, sig_rl: $sig_rl}' | base64 --wrap=0)
+        # set and check file paths
+        SPID_FILE_PATH="${SGX_CREDENTIALS_PATH}/spid.txt"
+        SPID_TYPE_FILE_PATH="${SGX_CREDENTIALS_PATH}/spid_type.txt"
+        [ -f "${SPID_FILE_PATH}" ] || die "no spid file ${SPID_FILE_PATH}"
+        [ -f "${SPID_TYPE_FILE_PATH}" ] || die "no spid type file ${SPID_TYPE_FILE_PATH}"
+        # build attestation params
+        ATTESTATION_PARAMS=$(jq -c -n --arg atype "$(cat ${SPID_TYPE_FILE_PATH})" --arg spid "$(cat ${SPID_FILE_PATH})" --arg sig_rl "" '{attestation_type: $atype, hex_spid: $spid, sig_rl: $sig_rl}' | base64 --wrap=0)
         shift; shift
         ;;
         --peerAddresses)

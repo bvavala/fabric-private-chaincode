@@ -208,6 +208,7 @@ func (t *EnclaveChaincode) createenclave(stub shim.ChaincodeStubInterface) pb.Re
 		logger.Errorf(errMsg)
 		return shim.Error(errMsg)
 	}
+	hostParamsString := string(hostParamsBytes)
 
 	creatorBytes, err := stub.GetCreator()
 	if err != nil {
@@ -218,7 +219,7 @@ func (t *EnclaveChaincode) createenclave(stub shim.ChaincodeStubInterface) pb.Re
 
 	hostParametersProto := &fpcpb.Host_Parameters{
 		Creator:      creatorBytes,
-		PeerEndpoint: hostParamsBytes,
+		PeerEndpoint: hostParamsString,
 	}
 	hostParametersProtoBytes, err := proto.Marshal(hostParametersProto)
 	if err != nil {

@@ -45,7 +45,7 @@ echo_test() {
 
     # first call negated as it fails
     try_fail ${PEER_CMD} lifecycle chaincode createenclave -o ${ORDERER_ADDR} --peerAddresses "localhost:7051" --name wrong-cc-id
-    try ${PEER_CMD} lifecycle chaincode createenclave -o ${ORDERER_ADDR} --peerAddresses "localhost:7051" --name ${CC_ID}
+    try ${PEER_CMD} lifecycle chaincode createenclave -o ${ORDERER_ADDR} --peerAddresses "localhost:7051" --name ${CC_ID} --sgx-credentials-path "${FPC_PATH}/config/ias"
 
     try ${PEER_CMD} lifecycle chaincode querycommitted -C ${CHAN_ID}
 

@@ -28,7 +28,8 @@ message CC_Parameters {
 message Host_Parameters {
     bytes creator = 1;
 
-    bytes peer_endpoint = 2;
+    // the (externally accessible) address of the peer endpoint
+    string peer_endpoint = 2;
 
     // Post-MVP: This will be a X509 peer certificate on
     // Enclave_VK and CC_Parameters signed by a CA rooted in

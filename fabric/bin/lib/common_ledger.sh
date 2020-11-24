@@ -28,8 +28,6 @@ ledger_precond_check() {
 	[ -x "${FABRIC_BIN_DIR}/orderer" ] || die "orderer command does not exist in '${FABRIC_BIN_DIR}'"
 	[ -x "${FABRIC_BIN_DIR}/configtxgen" ] || die "configtxgen command does not exist in '${FABRIC_BIN_DIR}'"
 	[ ! -z "${FABRIC_STATE_DIR}" ] || die "Undefined fabric ledger state directory '${FABRIC_STATE_DIR}'"
-	(cd "${FABRIC_CFG_PATH}" && [ -e "${SPID_FILE}" ]) || die "spid not properly configured in ${FABRIC_CFG_PATH}/core.yaml or file '${SPID_FILE}' does not exist"
-	(cd "${FABRIC_CFG_PATH}" && [ -e "${API_KEY_FILE}" ]) || die "apiKey not properly configured in ${FABRIC_CFG_PATH}/core.yaml or apiKey file '${API_KEY_FILE}' does not exist"
 }
 
 
@@ -79,8 +77,6 @@ parse_fabric_config() {
 
     FABRIC_STATE_DIR=$(perl -0777 -n -e 'm/fileSystemPath:\s*(\S+)/i && print "$1"' ${CONFIG_DIR}/core.yaml)
 
-    SPID_FILE=$(perl -0777 -n -e 'm/spid:\s*file:\s*(\S+)/i && print "$1"' ${CONFIG_DIR}/core.yaml)
-    API_KEY_FILE=$(perl -0777 -n -e 'm/apiKey:\s*file:\s*(\S+)/i && print "$1"' ${CONFIG_DIR}/core.yaml)
     PEER_ID=$(perl -0777 -n -e 'm/id:\s*(\S+)/i && print "$1"' ${CONFIG_DIR}/core.yaml)
     NET_ID=$(perl -0777 -n -e 'm/networkId:\s*(\S+)/i && print "$1"' ${CONFIG_DIR}/core.yaml)
 }
@@ -127,9 +123,9 @@ ledger_init() {
     try ${FABRIC_BIN_DIR}/cryptogen generate --config=./crypto-config.yaml --output="${FABRIC_STATE_DIR}/organizations"
     # 2. start orderer
     # - Creating a genesisblock for orderer-system-channel......."
-    try ${CONFIGTXGEN_CMD} -outputBlock ${FABRIC_STATE_DIR}/genesisblock -profile SampleDevModeEtcdRaft -channelID orderer-system-channel
+    try ${CONFIGTXGEN_CMD} -outputBlock ${FABRIC_STATE_DIR}/genesisblock -profile sampledevmodeetcdraft -channelID orderer-system-channel
     sleep 1
-    ORDERER_GENERAL_GENESISPROFILE=SampleDevModeEtcdRaft ${ORDERER_CMD} 1>${ORDERER_LOG_OUT} 2>${ORDERER_LOG_ERR} &
+    ORDERER_GENERAL_GENESISPROFILE=sampledevmodeetcdraft ${ORDERER_CMD} 1>${ORDERER_LOG_OUT} 2>${ORDERER_LOG_ERR} &
     export ORDERER_PID=$!
     echo "${ORDERER_PID}" > ${ORDERER_PID_FILE}
     sleep 1

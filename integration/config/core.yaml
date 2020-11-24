@@ -766,9 +766,3 @@ metrics:
 sgx:
     enclave:
         library: ../../tlcc/enclave/lib/enclave.signed.so
-    ias:
-        url: https://api.trustedservices.intel.com/sgx/dev/attestation/v3/report
-        apiKey:
-            file: ias/api_key.txt
-        spid:
-            file: ias/spid.txt

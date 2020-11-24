@@ -123,9 +123,9 @@ ledger_init() {
     try ${FABRIC_BIN_DIR}/cryptogen generate --config=./crypto-config.yaml --output="${FABRIC_STATE_DIR}/organizations"
     # 2. start orderer
     # - Creating a genesisblock for orderer-system-channel......."
-    try ${CONFIGTXGEN_CMD} -outputBlock ${FABRIC_STATE_DIR}/genesisblock -profile sampledevmodeetcdraft -channelID orderer-system-channel
+    try ${CONFIGTXGEN_CMD} -outputBlock ${FABRIC_STATE_DIR}/genesisblock -profile SampleDevModeEtcdRaft -channelID orderer-system-channel
     sleep 1
-    ORDERER_GENERAL_GENESISPROFILE=sampledevmodeetcdraft ${ORDERER_CMD} 1>${ORDERER_LOG_OUT} 2>${ORDERER_LOG_ERR} &
+    ORDERER_GENERAL_GENESISPROFILE=SampleDevModeEtcdRaft ${ORDERER_CMD} 1>${ORDERER_LOG_OUT} 2>${ORDERER_LOG_ERR} &
     export ORDERER_PID=$!
     echo "${ORDERER_PID}" > ${ORDERER_PID_FILE}
     sleep 1

@@ -419,10 +419,6 @@ peer:
           vscc:
             name: DefaultValidation
             library:
-          # # FPC Addition:3
-          # fpc-vscc:
-          #    name: FPCValidation
-          #    library:
     # Number of goroutines that will execute transaction validation in parallel.
     # By default, the peer chooses the number of CPUs on the machine. Set this
     # variable to override that choice.
@@ -613,7 +609,6 @@ chaincode:
         escc: enable
         vscc: enable
         qscc: enable
-        tlcc: enable  # FPC Addition:4
 
     # Logging section for the chaincode container
     logging:

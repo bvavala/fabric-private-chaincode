@@ -53,7 +53,7 @@ type UploadRequest struct {
 }
 
 func initDummyPatients() {
-	users := []string{"patient1", "patient2"}
+	users := []string{"patient1", "patient2", "patient3"}
 
 	fmt.Printf("Creating patients and data...")
 	for i := 0; i < len(users); i++ {

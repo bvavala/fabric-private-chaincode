@@ -10,7 +10,7 @@ build:
 	$(GO) build $(GOTAGS) -o data-provider-service
 
 .PHONY: docker
-docker:
+docker: build
 	$(DOCKER) build $(DOCKER_BUILD_OPTS) \
     	--no-cache \
     	-t irb-data-provider-service:latest \

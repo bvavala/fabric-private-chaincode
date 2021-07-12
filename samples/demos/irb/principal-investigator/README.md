@@ -11,7 +11,8 @@ go run .
 Currently, the frontend does not support registration of a new study. So we do it manually with the following command:
 ```bash
 curl -X POST -H "Content-Type: application/json" \
-    -d '{"studyId": "1", "Users": ["patient1", "patient2"]}' \
+    -d '{"studyId": "1", "Users": ["patient1", "patient2", "patient3"]}' \
     http://localhost:3002/api/register-study
 ```
 
+Be careful to the users you enroll, because you will have to upload as many data sets to the storage service.

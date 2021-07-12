@@ -7,7 +7,10 @@ RUN npm install -g http-server
 WORKDIR /app
 
 # copy both 'package.json' and 'package-lock.json' (if available)
-COPY demo/package*.json .
+COPY demo/package.json .
+COPY demo/package-lock.json .
+
+COPY demo/.env.local .
 
 # install project dependencies
 RUN npm install

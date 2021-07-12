@@ -1,44 +1,78 @@
 module github.com/hyperledger/fabric-private-chaincode
 
-go 1.15
-
-// Note:
-// - fabric has a go.mod but the normal tagging, e.g., v2.2.0 does NOT
-//   follow go module versioning, where API with version > v1 have to be explicitly
-//   versioned.
-//   the workaround is to update the module not based on version tag, e.g.,
-//      go get github.com/hyperledger/fabric@v2.2.0
-//   (which will fail) but using the commit id or a branch name
-//      go get github.com/hyperledger/fabric@release-2.2
-//   The version attributed to, though, seems rather random but, oh, well, ....
-// - furthermore, try to keep versions here as much as possible in sync
-//   and go mod tidy'ed as additional or newer dependencies can pull in
-//   versions which make fabric tools, e.g., configtxgen, fail mysteriously
-//   at runtime. (Note though keeping them identical in version will often
-//   not be possible ....)
+go 1.16
 
 require (
-	github.com/go-redis/redis/v8 v8.8.2 // indirect
-	github.com/golang/protobuf v1.4.2
-	github.com/gin-contrib/cors v1.3.1
-	github.com/gin-gonic/gin v1.7.2
-	github.com/go-redis/redis/v8 v8.8.2
-	github.com/go-resty/resty/v2 v2.5.0 // indirect
-	github.com/golang/protobuf v1.4.3
-	github.com/hyperledger/fabric v1.4.0-rc1.0.20201118191903-ec81f3e74fa1
-	github.com/hyperledger/fabric-chaincode-go v0.0.0-20201119163726-f8ef75b17719
-	github.com/hyperledger/fabric-contract-api-go v1.1.1
-	github.com/hyperledger/fabric-protos-go v0.0.0-20201028172056-a3136dde2354
-	github.com/hyperledger/fabric-samples/chaincode/marbles02/go v0.0.0-20210428060230-9db8164f049b // indirect
-	github.com/hyperledger/fabric-sdk-go v1.0.0
-	github.com/maxbrunsfeld/counterfeiter/v6 v6.3.0
-	github.com/onsi/ginkgo v1.15.0
-	github.com/onsi/gomega v1.10.5
-	github.com/pkg/errors v0.9.1
-	github.com/spf13/cobra v0.0.5
-	github.com/stretchr/testify v1.7.0
-	golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9
-	golang.org/x/tools v0.0.0-20201224043029-2b0845dc783e
-	google.golang.org/protobuf v1.25.0
-	gopkg.in/yaml.v2 v2.3.0
+	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
+	github.com/afex/hystrix-go v0.0.0-20180502004556-fa1af6a1f4f5 // indirect
+	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
+	github.com/alecthomas/units v0.0.0-20190717042225-c3de453c63f4 // indirect
+	github.com/apache/thrift v0.13.0 // indirect
+	github.com/aryann/difflib v0.0.0-20170710044230-e206f873d14a // indirect
+	github.com/aws/aws-lambda-go v1.13.3 // indirect
+	github.com/aws/aws-sdk-go v1.27.0 // indirect
+	github.com/aws/aws-sdk-go-v2 v0.18.0 // indirect
+	github.com/casbin/casbin/v2 v2.1.2 // indirect
+	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
+	github.com/clbanning/x2j v0.0.0-20191024224557-825249438eec // indirect
+	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
+	github.com/docker/libnetwork v0.8.0-dev.2.0.20180608203834-19279f049241 // indirect
+	github.com/edsrzf/mmap-go v1.0.0 // indirect
+	github.com/franela/goblin v0.0.0-20200105215937-c9ffbefa60db // indirect
+	github.com/franela/goreq v0.0.0-20171204163338-bcd34c9993f8 // indirect
+	github.com/fsouza/go-dockerclient v1.7.2 // indirect
+	github.com/gin-contrib/cors v1.3.1 // indirect
+	github.com/gin-gonic/gin v1.7.2 // indirect
+	github.com/go-kit/kit v0.8.0 // indirect
+	github.com/go-logfmt/logfmt v0.5.0 // indirect
+	github.com/go-redis/redis/v8 v8.9.0 // indirect
+	github.com/golang/protobuf v1.5.0 // indirect
+	github.com/gorilla/context v1.1.1 // indirect
+	github.com/grpc-ecosystem/go-grpc-middleware v1.1.0 // indirect
+	github.com/hashicorp/consul/api v1.3.0 // indirect
+	github.com/hashicorp/go-version v1.2.0 // indirect
+	github.com/hudl/fargo v1.3.0 // indirect
+	github.com/hyperledger/fabric v2.1.1+incompatible // indirect
+	github.com/hyperledger/fabric-amcl v0.0.0-20210319225857-000ace5745f9 // indirect
+	github.com/hyperledger/fabric-chaincode-go v0.0.0-20210319203922-6b661064d4d9 // indirect
+	github.com/hyperledger/fabric-contract-api-go v1.1.1 // indirect
+	github.com/hyperledger/fabric-protos-go v0.0.0-20210520141515-88b9de28f790 // indirect
+	github.com/hyperledger/fabric-sdk-go v1.0.0 // indirect
+	github.com/influxdata/influxdb1-client v0.0.0-20191209144304-8bf82d3c094d // indirect
+	github.com/lightstep/lightstep-tracer-go v0.18.1 // indirect
+	github.com/nats-io/nats-server/v2 v2.1.2 // indirect
+	github.com/oklog/oklog v0.3.2 // indirect
+	github.com/oklog/run v1.0.0 // indirect
+	github.com/opentracing/basictracer-go v1.0.0 // indirect
+	github.com/openzipkin-contrib/zipkin-go-opentracing v0.4.5 // indirect
+	github.com/openzipkin/zipkin-go v0.2.2 // indirect
+	github.com/pact-foundation/pact-go v1.0.4 // indirect
+	github.com/pborman/uuid v1.2.0 // indirect
+	github.com/performancecopilot/speed v3.0.0+incompatible // indirect
+	github.com/pkg/errors v0.9.1 // indirect
+	github.com/prometheus/client_model v0.1.0 // indirect
+	github.com/prometheus/procfs v0.0.8 // indirect
+	github.com/samuel/go-zookeeper v0.0.0-20190923202752-2cc03de413da // indirect
+	github.com/smartystreets/goconvey v1.6.4 // indirect
+	github.com/sony/gobreaker v0.4.1 // indirect
+	github.com/spf13/cobra v0.0.5 // indirect
+	github.com/streadway/amqp v0.0.0-20190827072141-edfb9018d271 // indirect
+	github.com/streadway/handy v0.0.0-20190108123426-d5acb3125c2a // indirect
+	github.com/sykesm/zap-logfmt v0.0.4 // indirect
+	github.com/vishvananda/netlink v1.0.0 // indirect
+	github.com/vishvananda/netns v0.0.0-20180720170159-13995c7128cc // indirect
+	go.etcd.io/etcd v0.0.0-20191023171146-3cf2f69b5738 // indirect
+	go.opencensus.io v0.22.2 // indirect
+	go.uber.org/zap v1.17.0 // indirect
+	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
+	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
+	golang.org/x/tools v0.1.2 // indirect
+	google.golang.org/genproto v0.0.0-20200423170343-7949de9c1215 // indirect
+	google.golang.org/protobuf v1.26.0 // indirect
+	gopkg.in/airbrake/gobrake.v2 v2.0.9 // indirect
+	gopkg.in/gcfg.v1 v1.2.3 // indirect
+	gopkg.in/gemnasium/logrus-airbrake-hook.v2 v2.1.2 // indirect
+	gopkg.in/warnings.v0 v0.1.2 // indirect
+	gopkg.in/yaml.v2 v2.3.0 // indirect
+	sourcegraph.com/sourcegraph/appdash v0.0.0-20190731080439-ebfcffb1b5c0 // indirect
 )

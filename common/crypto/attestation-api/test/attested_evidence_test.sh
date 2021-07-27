@@ -123,7 +123,7 @@ if [[ ${SGX_MODE} == "HW" ]]; then
     orchestrate
 
     #run attestation generation/conversion/verification tests (same as before, though with Go-based conversion)
-    orchestrate_with_go_conversion
+    #orchestrate_with_go_conversion
 else
     say "Skipping actual attestation test"
 fi

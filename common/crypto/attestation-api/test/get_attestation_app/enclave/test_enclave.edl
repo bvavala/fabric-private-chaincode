@@ -6,6 +6,7 @@
 
 enclave {
     from "sgx_tstdc.edl" import *;
+    from "sgx_pthread.edl" import *;
     from "../../../../attestation-api/ocalls/attestation-ocalls.edl" import *;
     from "../../../../../logging/ocalls/logging.edl" import *;
 

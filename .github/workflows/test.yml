@@ -29,6 +29,7 @@ jobs:
           DOCKER_BUILDKIT: 1
           DOCKER_QUIET_BUILD: 1
         run: |
+          make clean
           DOCKER_BUILD_OPTS="--build-arg UBUNTU_VERSION=${{ matrix.os-version }} --build-arg UBUNTU_NAME=${{ matrix.os-name }}" \
           make -C utils/docker build build-dev
 

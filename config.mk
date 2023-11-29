@@ -100,3 +100,4 @@ endif
 #by default, debug is not enabled
 export FPC_GDB_DEBUG_ENABLED ?= false
 
+export CTEST_OUTPUT_ON_FAILURE=1

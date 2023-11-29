@@ -29,7 +29,7 @@
  */
 
 #ifndef DO_DEBUG
-#define DO_DEBUG false
+#define DO_DEBUG true
 #endif
 
 #ifndef DO_INFO

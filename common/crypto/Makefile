@@ -7,6 +7,7 @@ include $(TOP)/build.mk
 
 BUILD_DIR := _build
 
+export PDO_DEBUG_BUILD=1
 PDO_ENCLAVE_CODE_SIGN_PEM := "pdo_enclave_code_sign.pem"
 
 $(BUILD_DIR):
@@ -24,7 +25,7 @@ build: $(BUILD_DIR)
 test: build
 	env CTEST_OUTPUT_ON_FAILURE=1 \
 	$(MAKE) -C $(BUILD_DIR) test || \
-		(echo "PDO crypto tests failed. Define PDO_DEBUG_BUILD=1 environment for enabling logging in tests." && exit 1)
+		(echo "PDO crypto tests failed. Define PDO_DEBUG_BUILD=1 environment for enabling logging in tests." && cat _build/Testing/Temporary/*.log && exit 1)
 
 clean:
 	-if [ -d $(BUILD_DIR) ];then $(MAKE) -C $(BUILD_DIR) clean; fi

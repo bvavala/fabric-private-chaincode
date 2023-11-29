@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-INCLUDE ("$ENV{FPC_PATH}/cmake/ConfigSGX.cmake")
 
 ##################################################################################################
 ## LOG test app:
@@ -15,7 +14,7 @@ ADD_EXECUTABLE(${TEST_LOG_APP}
     )
 
 TARGET_INCLUDE_DIRECTORIES(${TEST_LOG_APP} PRIVATE "../untrusted") # for logging.h
-TARGET_INCLUDE_DIRECTORIES(${TEST_LOG_APP} PRIVATE "../../") # for error.h
+TARGET_INCLUDE_DIRECTORIES(${TEST_LOG_APP} PRIVATE "$ENV{FPC_PATH}/common") # for error.h
 TARGET_LINK_LIBRARIES(${TEST_LOG_APP} ${U_LOGGING_LIB_NAME})
 
 COND_ENABLE_COVERAGE(${TEST_LOG_APP})

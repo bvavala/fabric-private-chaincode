@@ -28,7 +28,7 @@ build: $(BUILD_DIR)
 test: build
 	env CTEST_OUTPUT_ON_FAILURE=1 \
 	$(MAKE) -C $(BUILD_DIR) test || \
-		(echo "PDO crypto tests failed. Define PDO_DEBUG_BUILD=1 environment for enabling logging in tests." && cat _build/Testing/Temporary/*.log && cd _build/tests && ls && sgx-gdb -ex run ./get_attestation_app && exit 1)
+		(echo "PDO crypto tests failed. Define PDO_DEBUG_BUILD=1 environment for enabling logging in tests." && cat _build/Testing/Temporary/*.log && cd _build/tests && ls && cat /proc/cpuinfo && sgx-gdb -ex run ./get_attestation_app && exit 1)
 
 clean:
 	-if [ -d $(BUILD_DIR) ];then $(MAKE) -C $(BUILD_DIR) clean; fi

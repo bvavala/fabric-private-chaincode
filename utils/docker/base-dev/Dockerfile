@@ -45,6 +45,7 @@ RUN apt-get update -q \
     build-essential \
     clang-format \
     cmake \
+    gdb \
     git \
     libcurl4-openssl-dev \
     libprotobuf-dev \
